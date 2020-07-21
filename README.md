@@ -1,5 +1,5 @@
 # glMaze
-This is a simple OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in maze and needs to find exit in randomly generated (Depth-first search algorithm) perfect maze. It's implemented using OpenGL, SDL2 and GLAD libraries.
+This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in maze and needs to find exit in randomly generated (Depth-first search algorithm) perfect maze. It's implemented using OpenGL, SDL2 and GLAD libraries.
 
 <span style="display:block;text-align:center">![Screenshot](./doc/screenshot.png)
 
