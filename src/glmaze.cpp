@@ -12,14 +12,6 @@
 int windowWidth, windowHeight, mazeSize;
 bool enableCollisions, setFullscreen;
 
-enum Direction 
-{
-    DIR_UP, 
-    DIR_DOWN, 
-    DIR_LEFT, 
-    DIR_RIGHT
-};
-
 //Check collision between point (camera) and cube (maze field)
 //For cube add some margin (0.2f) to avoid watching through walls
 bool collide(float pointX, float pointY, float wallX, float wallY)
