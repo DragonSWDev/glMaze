@@ -434,105 +434,17 @@ int main(int argc, char* argv[])
 
         glBindVertexArray(vertexArrayObject);
 
-        //Draw maze border
-        Direction wall = DIR_DOWN; //Start with bot wall
-        unsigned int j = 0;
-
-        //Start from 1 and end earlier because we don't need to draw first and last wall
-        for (unsigned int i = 1; i < maze.getMazeSize() * 4 - 1; i++)
-        {
-            if (i == maze.getMazeSize())
-                wall = DIR_RIGHT; //Bottom wall done, switch to right
-            else if (i == maze.getMazeSize() * 2) //Right wall done, switch to up
-                wall = DIR_UP;
-            else if (i == maze.getMazeSize() * 3)  //Just like before
-                wall = DIR_LEFT;
-
-            model = glm::mat4(1.0f);
-
-            switch (wall)
-            {
-                case DIR_DOWN: //Bottom wall
-                    if (i == maze.getMazeSize() - 1) //Don't draw last
-                        continue;
-
-                     //Only top part of this wall will be visible inside maze so draw only top wall of cube
-                    
-                    if (mazeArray[maze.getMazeSize() - 1][i])
-                    {
-                        //model = glm::translate(model, glm::vec3(i * 1.0f, 0.0f, -0.5f));
-                        model = glm::translate(model, glm::vec3(i*1.0f, 0.0f, (maze.getMazeSize() - 1) * 1.0f));
-                        model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.5f));
-
-                        shader.setUniformMatrix4fv("model", model);
-                        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                    }
-
-                    break;
-
-                case DIR_RIGHT: //Right wall
-                    j = i - maze.getMazeSize();
-
-                    if (j == 0 || j == maze.getMazeSize() - 1) //Don't first and last wall
-                        continue;
-
-                    if (mazeArray[j][maze.getMazeSize() - 1])
-                    {
-                        model = glm::translate(model, glm::vec3((maze.getMazeSize() - 1) * 1.0f, 0.0f, j * 1.0f));
-                        model = glm::translate(model, glm::vec3(-0.5f, 0.0f, 0.0f));
-                        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-                        shader.setUniformMatrix4fv("model", model);
-                        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                    }                 
-
-                    break;
-
-                case DIR_UP: //Top wall
-                    j = i - maze.getMazeSize() * 2;
-
-                    if (j == 0 || j == maze.getMazeSize() - 1) //Don't first and last wall
-                        continue;
-
-                    if (mazeArray[0][j] == true)
-                    {
-                        //model = glm::translate(model, glm::vec3(j * 1.0f, 0.0f, (maze.getMazeSize() - 1) * 1.0f));
-                        model = glm::translate(model, glm::vec3(j * 1.0f, 0.0f, 0.0f));
-                        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.5f));
-
-                        shader.setUniformMatrix4fv("model", model);
-                        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                    }
-
-                    break;
-
-                case DIR_LEFT: //Left wall
-                    j = i - maze.getMazeSize() * 3;
-
-                    if (j == 0 || j == maze.getMazeSize() - 1) //Don't first and last wall
-                        continue;
-
-                    if (mazeArray[j][0])
-                    {
-                        model = glm::translate(model, glm::vec3(0.0f, 0.0f, j * 1.0f));
-                        model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f));
-                        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-                        shader.setUniformMatrix4fv("model", model);
-                        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                    }
-
-                    break;
-            }
-        }
-
-        //Draw walls inside maze
+        //Draw walls, floor and ceiling
         //It should draw only visible walls so we are checking if we are on filled field and then check all four neighbours
         //Wall is only visible if neighbour is empty field, if it is we move and rotate plane in the right position to make cube
-        //Since border is drawn in another loop here we care only about drawing walls inside maze
-        for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude border walls
+        //Same goes for floor and ceiling
+        //Also check for collision
+        for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude margin
             for (unsigned int j = 1; j < maze.getMazeSize() - 1; j++)
             {
+                //Bind wall texture
+                glBindTexture(GL_TEXTURE_2D, mazeTextures[0]);
+
                 if (mazeArray[i][j] && !mazeArray[i][j-1]) //Left
                 {
                     model = glm::mat4(1.0f);
@@ -574,50 +486,37 @@ int main(int argc, char* argv[])
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
-            }
 
-        //Draw floor and check for collision
-        glBindTexture(GL_TEXTURE_2D, mazeTextures[1]);
+                //Draw floor and ceiling
+                if (!mazeArray[i][j]) //Draw floor/ceiling tile only under empty fields
+                {
+                    //Floor
+                    glBindTexture(GL_TEXTURE_2D, mazeTextures[1]);
 
-        for (unsigned int i = 0; i < maze.getMazeSize(); i++)
-            for (unsigned int j = 0; j < maze.getMazeSize(); j++)
-            {
-                //If camera is on nonempty field then setup collision flag if collisions are enabled
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
+                    model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
+                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+                    shader.setUniformMatrix4fv("model", model);
+                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+                    //Ceiling
+                    glBindTexture(GL_TEXTURE_2D, mazeTextures[2]);
+
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
+                    model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+                    shader.setUniformMatrix4fv("model", model);
+                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                }
+
+                //Check for collision
                 if (enableCollisions && mazeArray[i][j] && collide(cameraPos.x, cameraPos.z, j*1.0f, i*1.0f))
                     isCollision = true;
-
-                if (mazeArray[i][j]) //Draw floor tile only under empty fields
-                    continue;
-
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
-                model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
-                model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-                shader.setUniformMatrix4fv("model", model);
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             }
-
-        //Draw ceiling
-        glBindTexture(GL_TEXTURE_2D, mazeTextures[2]);
-
-        for (unsigned int i = 0; i < maze.getMazeSize(); i++)
-            for (unsigned int j = 0; j < maze.getMazeSize(); j++)
-            {
-                if (mazeArray[i][j]) 
-                    continue;
-
-                //Ceiling
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
-                model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
-                model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-                shader.setUniformMatrix4fv("model", model);
-                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            }
-            
-        glBindVertexArray(0);
 
         //Swap buffers and end drawing
         SDL_GL_SwapWindow(mainWindow);

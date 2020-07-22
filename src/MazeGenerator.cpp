@@ -8,16 +8,18 @@ MazeGenerator::MazeGenerator(unsigned int size)
     mazeSize = size;
 
     //Generate new array
-    mazeArray = new bool*[mazeSize];
+    //We make it bigger to add 1 field of margin on all four sides
+    //This will make rendering easier because there won't be need to carry about border as it will be drawn with rest of walls
+    mazeArray = new bool*[mazeSize + 2];
     
-    for(unsigned int i = 0; i < mazeSize; ++i)
-        mazeArray[i] = new bool[mazeSize];
+    for(unsigned int i = 0; i < mazeSize + 2; ++i)
+        mazeArray[i] = new bool[mazeSize + 2];
 }
 
 MazeGenerator::~MazeGenerator()
 {
     //Clean up array memory
-    for(unsigned int i = 0; i < mazeSize; ++i) 
+    for(unsigned int i = 0; i < mazeSize + 2; ++i) 
         delete [] mazeArray[i];
 
     delete [] mazeArray;
@@ -28,8 +30,8 @@ void MazeGenerator::generateMaze()
     std::cout << "Starting generation..." << std::endl;
 
     //Clear array
-    for(unsigned int i = 0; i < mazeSize; i++)
-        for(unsigned int j = 0; j < mazeSize; j++)
+    for(unsigned int i = 0; i < mazeSize + 2; i++)
+        for(unsigned int j = 0; j < mazeSize + 2; j++)
             mazeArray[i][j] = true;
 
     unsigned int x, y, direction, exit;
@@ -63,47 +65,47 @@ void MazeGenerator::generateMaze()
     //Dont stop until we get exit
     for (;;)
     {
-        exit = randNum(1, mazeSize - 2);
+        exit = randNum(2, mazeSize - 3);
         direction = randNum(1, 4);
 
         if (direction == 1) //Top border
-            if (mazeArray[1][exit] == false)
+            if (mazeArray[2][exit] == false)
             {
-                mazeArray[0][exit] = false;
+                mazeArray[1][exit] = false;
                 break;
             }
 
         if (direction == 2) //Bottom border
-            if (mazeArray[mazeSize - 2][exit] == false)
+            if (mazeArray[mazeSize - 3][exit] == false)
             {
-                mazeArray[mazeSize - 1][exit] = false;
+                mazeArray[mazeSize - 2][exit] = false;
                 break;
             }
 
         if (direction == 3) //Left border
-            if (mazeArray[exit][1] == false)
+            if (mazeArray[exit][2] == false)
             {
-                mazeArray[exit][0] = false;
+                mazeArray[exit][1] = false;
                 break;
             }
 
         if (direction == 4) //Right border
-            if (mazeArray[exit][mazeSize - 2] == false)
+            if (mazeArray[exit][mazeSize - 3] == false)
             {
-                mazeArray[exit][mazeSize - 1] = false;
+                mazeArray[exit][mazeSize - 2] = false;
                 break;
             }
     }
 
     //Generate start position
-    startX = randNum(2, mazeSize-2);
-    startY = randNum(2, mazeSize-2);
+    startX = randNum(3, mazeSize - 3);
+    startY = randNum(3, mazeSize - 3);
 
     //Generate until start position will be empty field inside maze
     while (mazeArray[startY][startX])
     {
-        startX = randNum(2, mazeSize-2);
-        startY = randNum(2, mazeSize-2);
+        startX = randNum(3, mazeSize-3);
+        startY = randNum(3, mazeSize-3);
     }
 
     std::cout << "Generation done." << std::endl;
@@ -117,7 +119,7 @@ bool** MazeGenerator::getMazeArray()
 void MazeGenerator::addPath(unsigned int x, unsigned int y)
 {
     //Check if we are out of bonds
-    if (x >= mazeSize - 1 || x <= 0 || y <= 0 || y >= mazeSize - 1)
+    if (x >= mazeSize - 2 || x <= 1 || y <= 1 || y >= mazeSize - 2)
         return;
 
     //Check if this cell was visited
