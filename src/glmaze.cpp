@@ -23,6 +23,12 @@ bool collide(float pointX, float pointY, float wallX, float wallY)
     return false;
 }
 
+//Get distance between to points in 3D space
+float getDistance(glm::vec3 pointA, glm::vec3 pointB)
+{
+    return glm::length(pointB - pointA);
+}
+
 //Parse command line arguments and set correct values (fallback to default values if they are wrong)
 void parseArguments(std::vector<std::string> arguments)
 {
@@ -81,7 +87,7 @@ void parseArguments(std::vector<std::string> arguments)
                 size = 0;
             }
 
-            if (size < 10 || size > 100)
+            if (size < 10 || size > 1000)
                 mazeSize = 20;
             else
                 mazeSize = size;
@@ -434,6 +440,17 @@ int main(int argc, char* argv[])
         for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude margin
             for (unsigned int j = 1; j < maze.getMazeSize() - 1; j++)
             {
+                //Check for collision
+                if (enableCollisions && mazeArray[i][j] && collide(cameraPos.x, cameraPos.z, j*1.0f, i*1.0f))
+                    isCollision = true;
+
+                //Don't draw anything that is further than 20
+                //If it is then it's pretty big chance it won't be visible so it's very simple optimization
+                //With big mazes there is chance that end of long hall will be invisible because it's further than 20 but it most cases it works fine
+                //It's still better than drawing everything because performance won't drop in big mazes
+                if (getDistance(cameraPos, glm::vec3(j*1.0f, 0.0f, i*1.0f)) > 20.0f)
+                    continue;
+
                 //Bind wall texture
                 glBindTexture(GL_TEXTURE_2D, mazeTextures[0]);
 
@@ -504,10 +521,6 @@ int main(int argc, char* argv[])
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
-
-                //Check for collision
-                if (enableCollisions && mazeArray[i][j] && collide(cameraPos.x, cameraPos.z, j*1.0f, i*1.0f))
-                    isCollision = true;
             }
 
         //Swap buffers and end drawing

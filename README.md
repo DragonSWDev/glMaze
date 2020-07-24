@@ -42,7 +42,7 @@ Configurations is specified by command line arguments. Options can be specified 
 Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key N will generate new maze and Escape will close the game.
 
 ### Optimizations
-Since it's my first "serious" OpenGL application there are still things to optimize and improve. It has very basic collision system which can work better (e.g. wall sliding is not possible so movement is not perfect). I've performed some optimizations like not rendering walls which player will never be able to see but still entire maze is rendered so performance is not very good with big mazes. It can be definitely improved
+Since it's my first "serious" OpenGL application there are still things to optimize and improve. It has very basic collision system which can work better (e.g. wall sliding is not possible so movement is not perfect). I've performed some basic optimizations like not rendering walls which player will never be able to see and not rendering anything that is further than certain distance.
 
 ## License
 glMaze is distributed under MIT License (see LICENSE file for more informations). Project is using SDL2, SDL_image and GLAD. For informations about these libraries licensing see their respective websites. Assets are made by me and distributed under CC BY 4.0 license. See details here: https://creativecommons.org/licenses/by/4.0/
