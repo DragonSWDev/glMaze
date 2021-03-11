@@ -102,3 +102,10 @@ void ShaderManager::setUniformMatrix4fv(const char* name, glm::mat4 uniform)
 
     glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(uniform));
 }
+
+void ShaderManager::setUniformVec3fv(const char *name, glm::vec3 uniform)
+{
+    GLint uniformLocation = glGetUniformLocation(programID, name);
+
+    glUniform3fv(uniformLocation, 1, glm::value_ptr(uniform));
+}

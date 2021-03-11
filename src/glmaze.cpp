@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 
     IMG_Init(IMG_INIT_PNG);
 
-    srand(time(NULL));
+    srand(time(0));
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE); //Set OpenGL context to OpenGL 3.3 Core Profile
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -208,13 +208,16 @@ int main(int argc, char* argv[])
     //Enable depth test
     glEnable(GL_DEPTH_TEST);
 
+    //Enable face culling
+    glEnable(GL_CULL_FACE);
+
     //Cube vertices
     float wallVertices[] = {
-        //Vertex positions      //Texture coordinates
-         0.5f,  0.5f, 0.0f,     1.0f, 1.0f,
-         0.5f, -0.5f, 0.0f,     1.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,
-        -0.5f,  0.5f, 0.0f,     0.0f, 1.0f
+        //Vertex positions      //Texture coordinates   //Normal vector
+         0.5f,  0.5f, 0.0f,     1.0f, 1.0f,             0.0f, 0.0f, 1.0f,
+         0.5f, -0.5f, 0.0f,     1.0f, 0.0f,             0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,             0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f,     0.0f, 1.0f,             0.0f, 0.0f, 1.0f
     };
 
     //VBO indexes
@@ -271,11 +274,14 @@ int main(int argc, char* argv[])
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementArrayBuffer); //Move indices table to element buffer object
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(wallIndices), wallIndices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)0); //Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0); //Position attribute
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(float))); //Texture attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(float))); //Texture attribute
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(float))); //Normal attribute
+    glEnableVertexAttribArray(2);
 
     //Create OpenGL textures
     GLuint mazeTextures[3];
@@ -335,13 +341,13 @@ int main(int argc, char* argv[])
     bool** mazeArray = maze.getMazeArray();
 
     //Setup camera matrices
-    glm::vec3 cameraPos   = glm::vec3(maze.getStartX()*1.0f, 0.0f, maze.getStartY()*1.0f);
+    glm::vec3 cameraPosition   = glm::vec3(maze.getStartX()*1.0f, 0.0f, maze.getStartY()*1.0f);
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
     float yawAngle = -90.0f;
 
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 
     //Enable vsync
     SDL_GL_SetSwapInterval(1);
@@ -354,7 +360,7 @@ int main(int argc, char* argv[])
     deltaTime = lastFrame;
     bool isCollision = false;
 
-    glm::vec3 lastPos = cameraPos;
+    glm::vec3 lastPos = cameraPosition;
 
     while (isRunning)
     {
@@ -374,7 +380,7 @@ int main(int argc, char* argv[])
         //If there is collision then change camera position to last position and put down collison flag
         if (isCollision)
         {
-            cameraPos = lastPos;
+            cameraPosition = lastPos;
             isCollision = false;
         }
 
@@ -384,14 +390,14 @@ int main(int argc, char* argv[])
         //Process input
         if (state[SDL_SCANCODE_UP])
         { 
-            lastPos = cameraPos;
-            cameraPos += movementSpeed * cameraFront;
+            lastPos = cameraPosition;
+            cameraPosition += movementSpeed * cameraFront;
         }
 
         if (state[SDL_SCANCODE_DOWN])
         {
-            lastPos = cameraPos;
-            cameraPos -= movementSpeed * cameraFront;
+            lastPos = cameraPosition;
+            cameraPosition -= movementSpeed * cameraFront;
         }
 
         if (state[SDL_SCANCODE_LEFT])
@@ -403,7 +409,7 @@ int main(int argc, char* argv[])
 
         if (state[SDL_SCANCODE_N]) //Generate new maze
         {
-            cameraPos = glm::vec3(maze.getStartX()*1.0f, 0.0f, maze.getStartY()*1.0f);
+            cameraPosition = glm::vec3(maze.getStartX()*1.0f, 0.0f, maze.getStartY()*1.0f);
             maze.generateMaze();
         }
 
@@ -425,10 +431,13 @@ int main(int argc, char* argv[])
         //Use shader
         shader.useShader();
         
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
         shader.setUniformMatrix4fv("view", view);
 
         shader.setUniformMatrix4fv("projection", projection);
+
+        shader.setUniformVec3fv("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+        shader.setUniformVec3fv("lightVector", cameraPosition);
 
         glBindVertexArray(vertexArrayObject);
 
@@ -438,18 +447,21 @@ int main(int argc, char* argv[])
         //Same goes for floor and ceiling
         //Also check for collision
         for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude margin
+        {
             for (unsigned int j = 1; j < maze.getMazeSize() - 1; j++)
             {
                 //Check for collision
-                if (enableCollisions && mazeArray[i][j] && collide(cameraPos.x, cameraPos.z, j*1.0f, i*1.0f))
+                if (enableCollisions && mazeArray[i][j] && collide(cameraPosition.x, cameraPosition.z, j*1.0f, i*1.0f))
                     isCollision = true;
 
                 //Don't draw anything that is further than 20
                 //If it is then it's pretty big chance it won't be visible so it's very simple optimization
                 //With big mazes there is chance that end of long hall will be invisible because it's further than 20 but it most cases it works fine
                 //It's still better than drawing everything because performance won't drop in big mazes
-                if (getDistance(cameraPos, glm::vec3(j*1.0f, 0.0f, i*1.0f)) > 20.0f)
+                if (getDistance(cameraPosition, glm::vec3(j*1.0f, 0.0f, i*1.0f)) > 20.0f)
+                {
                     continue;
+                }
 
                 //Bind wall texture
                 glBindTexture(GL_TEXTURE_2D, mazeTextures[0]);
@@ -470,27 +482,28 @@ int main(int argc, char* argv[])
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
                     model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f)); //Move right a bit
-                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //Rotate by 90 degrees around Y
+                    model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //Rotate by 90 degrees around Y
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
                 
-                if (!mazeArray[i-1][j] && mazeArray[i][j]) //Top
+                if (!mazeArray[i-1][j] && mazeArray[i][j]) //Front
                 {
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
-                    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.5f)); //Move up a bit
+                    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.5f)); //Move front a bit
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
                 
-                if (!mazeArray[i+1][j] && mazeArray[i][j]) //Bottom
+                if (!mazeArray[i+1][j] && mazeArray[i][j]) //Back
                 {
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
-                    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.5f)); //Move down a bit
+                    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.5f)); //Move back a bit
+                    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -516,12 +529,13 @@ int main(int argc, char* argv[])
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
                     model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
-                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                    model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
             }
+        }
 
         //Swap buffers and end drawing
         SDL_GL_SwapWindow(mainWindow);
