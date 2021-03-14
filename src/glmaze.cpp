@@ -12,13 +12,58 @@
 int windowWidth, windowHeight, mazeSize;
 bool enableCollisions, setFullscreen;
 
-//Check collision between point (camera) and cube (maze field)
+//Check collision between point (camera/player) and cube (maze field)
 //For cube add some margin (0.2f) to avoid watching through walls
-bool collide(float pointX, float pointY, float wallX, float wallY)
+bool checkCollisionPointCube(float pointX, float pointY, float wallX, float wallY)
 {
     if (pointX >= wallX - 0.7f && pointX <= wallX + 0.7f &&
         pointY >= wallY - 0.7f && pointY <= wallY + 0.7f)
             return true;
+
+    return false;
+}
+
+//Check collision between player and map
+bool checkCollision(float positionX, float positionZ, bool** mazeArray, int mazeSize)
+{
+    //Get player location (map array indices) in maze array
+    int startRow = positionZ;
+    int startColumn = positionX;
+
+    bool collide = false;
+
+    //Avoid checking whole array so start from actual indices - 2
+    startRow -= 2;
+    startColumn -= 2;
+
+    //If start indices are less than 0, use 0 instead
+    startRow = std::max(startRow, 0);
+    startColumn = std::max(startColumn, 0);
+
+    //Go through maze array starting from calculated position and ending by calculated position + 4
+    //If ending position is bigger than maze size then pick maze size
+    for (int i = startRow; i < std::min(startRow + 4, mazeSize); i++)
+    {
+        for (int j =  startColumn; j < std::min(startColumn + 4, mazeSize); j++)
+        {
+            //Collision occurs when player is on non empty field (true in maze array)
+            if (mazeArray[i][j] && checkCollisionPointCube(positionX, positionZ, j*1.0f, i*1.0f))
+            {
+                 collide = true;
+                 break; //If collision happened then stop checking, there is no need to check further
+            }
+        }
+
+        if (collide) //Same as before
+        {
+            break;
+        }
+    }
+
+    if (collide) //Collision happened
+    {
+        return true;
+    }
 
     return false;
 }
@@ -358,9 +403,8 @@ int main(int argc, char* argv[])
     float deltaTime, lastFrame, currentFrame, cameraSpeed, movementSpeed;
     lastFrame = SDL_GetTicks()*0.001f;
     deltaTime = lastFrame;
-    bool isCollision = false;
 
-    glm::vec3 lastPos = cameraPosition;
+    glm::vec3 lastPosition = cameraPosition;
 
     while (isRunning)
     {
@@ -377,27 +421,50 @@ int main(int argc, char* argv[])
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        //If there is collision then change camera position to last position and put down collison flag
-        if (isCollision)
-        {
-            cameraPosition = lastPos;
-            isCollision = false;
-        }
-
         //Get SDL keyboard state
         const Uint8 *state = SDL_GetKeyboardState(NULL);
         
         //Process input
         if (state[SDL_SCANCODE_UP])
         { 
-            lastPos = cameraPosition;
-            cameraPosition += movementSpeed * cameraFront;
+            lastPosition = cameraPosition; //Store last position
+
+            cameraPosition.x += movementSpeed * cameraFront.x; //Move x position
+
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            {
+                cameraPosition = lastPosition; //Revert position if collision happened
+            }
+
+            lastPosition = cameraPosition; //Store last position (if collision didn't happen then x position needs to be stored)
+
+            cameraPosition.z += movementSpeed * cameraFront.z; //Move z position
+
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            {
+                cameraPosition = lastPosition; //Same as before
+            }
         }
 
         if (state[SDL_SCANCODE_DOWN])
-        {
-            lastPos = cameraPosition;
-            cameraPosition -= movementSpeed * cameraFront;
+        { 
+            lastPosition = cameraPosition;
+
+           cameraPosition.x -= movementSpeed * cameraFront.x;
+
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            {
+                cameraPosition = lastPosition;
+            }
+
+            lastPosition = cameraPosition;
+
+            cameraPosition.z -= movementSpeed * cameraFront.z;
+
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            {
+                cameraPosition = lastPosition;
+            }
         }
 
         if (state[SDL_SCANCODE_LEFT])
@@ -445,15 +512,10 @@ int main(int argc, char* argv[])
         //It should draw only visible walls so we are checking if we are on filled field and then check all four neighbours
         //Wall is only visible if neighbour is empty field, if it is we move and rotate plane in the right position to make cube
         //Same goes for floor and ceiling
-        //Also check for collision
         for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude margin
         {
             for (unsigned int j = 1; j < maze.getMazeSize() - 1; j++)
             {
-                //Check for collision
-                if (enableCollisions && mazeArray[i][j] && collide(cameraPosition.x, cameraPosition.z, j*1.0f, i*1.0f))
-                    isCollision = true;
-
                 //Don't draw anything that is further than 20
                 //If it is then it's pretty big chance it won't be visible so it's very simple optimization
                 //With big mazes there is chance that end of long hall will be invisible because it's further than 20 but it most cases it works fine
