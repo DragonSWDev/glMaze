@@ -1,5 +1,5 @@
 # glMaze
-This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search algorithm) perfect maze. It's implemented using OpenGL, SDL2 and GLAD libraries.
+This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search and recursive division algorithms) perfect maze. It's implemented using OpenGL, SDL2 and GLAD libraries.
 
 <span style="display:block;text-align:center">![Screenshot](./doc/screenshot.png)
 
@@ -38,8 +38,12 @@ Configurations is specified by command line arguments. Options can be specified 
 
 **-fullscreen** - Run in fullscreen mode
 
+**-generator=value** - Select maze generator: "RD" for recursive division and "DFS" for depth-first search. Default is "RD".
+
+**-seed=value** - Generator seed
+
 ### Controls
-Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key N will generate new maze and Escape will close the game.
+Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key Escape will close the game.
 
 ### Optimizations
 Since it's my first "serious" OpenGL application there are still things to optimize and improve. I've performed some basic optimizations like not rendering walls which player will never be able to see and not rendering anything that is further than certain distance.

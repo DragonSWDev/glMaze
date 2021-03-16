@@ -1,185 +1,110 @@
 #include "MazeGenerator.hpp"
 
+#include <chrono>
 #include <iostream>
-#include <algorithm>
 
-MazeGenerator::MazeGenerator(unsigned int size)
+MazeGenerator::MazeGenerator(unsigned int size, std::string seed)
 {
     mazeSize = size;
 
-    //Generate new array
-    //We make it bigger to add 1 field of margin on all four sides
-    //This will make rendering easier because there won't be need to carry about border as it will be drawn with rest of walls
-    mazeArray = new bool*[mazeSize + 2];
-    
-    for(unsigned int i = 0; i < mazeSize + 2; ++i)
-        mazeArray[i] = new bool[mazeSize + 2];
+    if (seed.empty()) //Use time as seed
+    {
+        unsigned timeSeed = std::chrono::system_clock::now().time_since_epoch().count();
+        randomEngine.seed(timeSeed);
+    }
+    else //Use provided seed
+    {
+        std::seed_seq stringSeed(seed.begin(), seed.end());
+        randomEngine.seed(stringSeed);
+    }
 }
 
 MazeGenerator::~MazeGenerator()
 {
     //Clean up array memory
-    for(unsigned int i = 0; i < mazeSize + 2; ++i) 
+    for(unsigned int i = 0; i < mazeSize; ++i) 
         delete [] mazeArray[i];
 
     delete [] mazeArray;
 }
 
-void MazeGenerator::generateMaze()
+//Get random value in provided range
+int MazeGenerator::getRandomNumber(int min, int max)
 {
-    std::cout << "Starting generation..." << std::endl;
+    return std::uniform_int_distribution<int>{min, max}(randomEngine);
+}
 
-    //Clear array
-    for(unsigned int i = 0; i < mazeSize + 2; i++)
-        for(unsigned int j = 0; j < mazeSize + 2; j++)
-            mazeArray[i][j] = true;
-
-    unsigned int x, y, direction, exit;
-
-    x = randNum(3, mazeSize - 3);
-    y = randNum(3, mazeSize - 3);
-    direction = randNum(1, 4);
-
-    mazeArray[x][y] = false;
-
-    switch (direction)
-    {
-        case 1: //Up
-            addPath(x, y - 1);
-            break;
-
-        case 2: //Down
-            addPath(x, y + 1);
-            break;
-        
-        case 3: //Left
-            addPath(x - 1, y);
-            break;
-
-        case 4: //Right
-            addPath(x + 1, y);
-            break;
-    }
-
-    //Set exit on random border wall (and check if it's accessible inside maze)
-    //Dont stop until we get exit
-    for (;;)
-    {
-        exit = randNum(2, mazeSize - 3);
-        direction = randNum(1, 4);
-
-        if (direction == 1) //Top border
-            if (mazeArray[2][exit] == false)
-            {
-                mazeArray[1][exit] = false;
-                break;
-            }
-
-        if (direction == 2) //Bottom border
-            if (mazeArray[mazeSize - 3][exit] == false)
-            {
-                mazeArray[mazeSize - 2][exit] = false;
-                break;
-            }
-
-        if (direction == 3) //Left border
-            if (mazeArray[exit][2] == false)
-            {
-                mazeArray[exit][1] = false;
-                break;
-            }
-
-        if (direction == 4) //Right border
-            if (mazeArray[exit][mazeSize - 3] == false)
-            {
-                mazeArray[exit][mazeSize - 2] = false;
-                break;
-            }
-    }
-
+//Set start position for maze
+void MazeGenerator::setStartPosition()
+{
     //Generate start position
-    startX = randNum(3, mazeSize - 3);
-    startY = randNum(3, mazeSize - 3);
+    startX = getRandomNumber(1, mazeSize - 1);
+    startY = getRandomNumber(1, mazeSize - 1);
 
     //Generate until start position will be empty field inside maze
     while (mazeArray[startY][startX])
     {
-        startX = randNum(3, mazeSize-3);
-        startY = randNum(3, mazeSize-3);
+        startX = getRandomNumber(1, mazeSize - 1);
+        startY = getRandomNumber(1, mazeSize - 1);
     }
-
-    std::cout << "Generation done." << std::endl;
 }
 
-bool** MazeGenerator::getMazeArray()
+//Set exit on some border
+void MazeGenerator::setExit()
 {
-    return mazeArray;
-}
+    //Set exit on random border wall (and check if it's accessible inside maze)
+    //Dont stop until we get exit
+    bool foundExit = false;
 
-void MazeGenerator::addPath(unsigned int x, unsigned int y)
-{
-    //Check if we are out of bonds
-    if (x >= mazeSize - 2 || x <= 1 || y <= 1 || y >= mazeSize - 2)
-        return;
-
-    //Check if this cell was visited
-    if (!mazeArray[x][y])
-        return;
-
-    //Count visited neighbours
-    int count = 0;
-
-    if (mazeArray[x - 1][y] == false)
-        count++;
-
-    if (mazeArray[x + 1][y] == false)
-        count++;
-
-    if (mazeArray[x][y - 1] == false)
-        count++;
-
-    if (mazeArray[x][y + 1] == false)
-        count++;
-
-    if (count > 1)
-        return;
-
-    mazeArray[x][y] = false;
-
-    //Add directions to list
-    directions.push_back(1);
-    directions.push_back(2);
-    directions.push_back(3);
-    directions.push_back(4);
-
-    std::random_shuffle(directions.begin(), directions.end());
-
-    for (unsigned int i = 0; i < directions.size(); i++)
+    while (!foundExit)
     {
-        switch (directions[i])
+        int exitIndex = getRandomNumber(1, mazeSize - 1);
+        Direction exitWall = MazeGenerator::Direction(getRandomNumber(0, 3));
+
+        switch (exitWall)
         {
-            case 1: //Up
-                addPath(x, y - 1);
+            case Direction::TOP:
+                if (mazeArray[1][exitIndex] == false)
+                {
+                    mazeArray[0][exitIndex] = false;
+                    foundExit = true;
+                }
+
                 break;
 
-            case 2: //Down
-                addPath(x, y + 1);
+            case Direction::BOTTOM:
+                if (mazeArray[mazeSize - 2][exitIndex] == false)
+                {
+                    mazeArray[mazeSize - 1][exitIndex] = false;
+                    foundExit = true;
+                }
+
                 break;
 
-            case 3: //Left
-                addPath(x - 1, y);
+            case Direction::LEFT:
+                if (mazeArray[exitIndex][1] == false)
+                {
+                    mazeArray[exitIndex][0] = false;
+                    foundExit = true;
+                }
+
                 break;
 
-            case 4: //Right
-                addPath(x + 1, y);
+            case Direction::RIGHT:
+                if (mazeArray[exitIndex][mazeSize - 2] == false)
+                {
+                    mazeArray[exitIndex][mazeSize - 1] = false;
+                    foundExit = true;
+                }
+
                 break;
         }
     }
 }
 
-int MazeGenerator::randNum(int min, int max)
+bool** MazeGenerator::getMazeArray()
 {
-    return rand()%(max-min+1)+min;
+    return mazeArray;
 }
 
 unsigned int MazeGenerator::getMazeSize()

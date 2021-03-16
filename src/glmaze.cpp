@@ -7,10 +7,17 @@
 #include <iostream>
 
 #include "ShaderManager.hpp"
-#include "MazeGenerator.hpp"
+#include "MazeGeneratorDFS.hpp"
+#include "MazeGeneratorRD.hpp"
+
+//Available maze generators
+enum Generator { DFS, RD };
 
 int windowWidth, windowHeight, mazeSize;
 bool enableCollisions, setFullscreen;
+std::string mazeSeed;
+
+Generator selectedGenerator;
 
 //Check collision between point (camera/player) and cube (maze field)
 //For cube add some margin (0.2f) to avoid watching through walls
@@ -96,7 +103,6 @@ void parseArguments(std::vector<std::string> arguments)
             }
             catch(...)
             {
-                std::cerr << "Wrong width value!" << std::endl;
                 width = 0;
             }
         }
@@ -111,7 +117,6 @@ void parseArguments(std::vector<std::string> arguments)
             }
             catch(...)
             {
-                std::cerr << "Wrong height value!" << std::endl;
                 height = 0;
             }
         }
@@ -128,7 +133,6 @@ void parseArguments(std::vector<std::string> arguments)
             }
             catch(...)
             {
-                std::cerr << "Wrong size value!" << std::endl;
                 size = 0;
             }
 
@@ -136,6 +140,27 @@ void parseArguments(std::vector<std::string> arguments)
                 mazeSize = 20;
             else
                 mazeSize = size;
+        }
+
+        if (argument.find("-generator=") != std::string::npos && argument.size() > 11)
+        {
+            std::string generatorString = argument.substr(11, argument.size());
+            
+            if (generatorString == "DFS")
+            {
+                selectedGenerator = Generator::DFS;
+            }
+            else
+            {
+                selectedGenerator = Generator::RD;
+            }
+        }
+
+        if (argument.find("-seed=") != std::string::npos && argument.size() > 6)
+        {
+            std::string seedString = argument.substr(6, argument.size());
+            
+            mazeSeed = seedString;
         }
 
         if (argument.find("-disable-collisions") != std::string::npos)
@@ -166,6 +191,8 @@ int main(int argc, char* argv[])
     mazeSize = 20;
     enableCollisions = true;
     setFullscreen = false;
+    mazeSeed = "";
+    selectedGenerator = Generator::RD; //Recursive division maze generator
 
     std::vector<std::string> arguments;
 
@@ -179,7 +206,7 @@ int main(int argc, char* argv[])
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
-        std::cout << "SDL init failed! Error: " << SDL_GetError() << std::endl;
+        std::cerr << "SDL init failed! Error: " << SDL_GetError() << std::endl;
         return -1;
     }
 
@@ -205,9 +232,37 @@ int main(int argc, char* argv[])
     std::cout << "Maze size: " << mazeSize << std::endl;
     std::cout << (enableCollisions ? "Collisions enabled" : "Collisions disabled") << std::endl << std::endl;
 
-    IMG_Init(IMG_INIT_PNG);
+    if (!mazeSeed.empty())
+    {
+        std::cout << "Generator seed: " << mazeSeed << std::endl;
+    }
 
-    srand(time(0));
+    std::cout << "Maze generator: ";
+
+    bool** mazeArray;
+    MazeGenerator* mazeGenerator;
+
+    switch (selectedGenerator)
+    {
+        case Generator::DFS:
+            std::cout << "DFS" << std::endl;
+
+            mazeGenerator = new MazeGeneratorDFS(mazeSize, mazeSeed);
+
+            break;
+
+        default:
+            std::cout << "RD" << std::endl;
+
+            mazeGenerator = new MazeGeneratorRD(mazeSize, mazeSeed);
+
+            break;
+    }
+
+    mazeGenerator->generateMaze();
+    mazeArray = mazeGenerator->getMazeArray();
+
+    IMG_Init(IMG_INIT_PNG);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE); //Set OpenGL context to OpenGL 3.3 Core Profile
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -380,13 +435,8 @@ int main(int argc, char* argv[])
 
     projection = glm::perspective(glm::radians(45.0f), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
 
-    //Generate maze and get pointer to array
-    MazeGenerator maze(mazeSize);
-    maze.generateMaze();
-    bool** mazeArray = maze.getMazeArray();
-
     //Setup camera matrices
-    glm::vec3 cameraPosition   = glm::vec3(maze.getStartX()*1.0f, 0.0f, maze.getStartY()*1.0f);
+    glm::vec3 cameraPosition   = glm::vec3(mazeGenerator->getStartX()*1.0f, 0.0f, mazeGenerator->getStartY()*1.0f);
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -431,7 +481,7 @@ int main(int argc, char* argv[])
 
             cameraPosition.x += movementSpeed * cameraFront.x; //Move x position
 
-            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, mazeGenerator->getMazeSize()))
             {
                 cameraPosition = lastPosition; //Revert position if collision happened
             }
@@ -440,7 +490,7 @@ int main(int argc, char* argv[])
 
             cameraPosition.z += movementSpeed * cameraFront.z; //Move z position
 
-            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, mazeGenerator->getMazeSize()))
             {
                 cameraPosition = lastPosition; //Same as before
             }
@@ -452,7 +502,7 @@ int main(int argc, char* argv[])
 
            cameraPosition.x -= movementSpeed * cameraFront.x;
 
-            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, mazeGenerator->getMazeSize()))
             {
                 cameraPosition = lastPosition;
             }
@@ -461,27 +511,27 @@ int main(int argc, char* argv[])
 
             cameraPosition.z -= movementSpeed * cameraFront.z;
 
-            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, maze.getMazeSize()))
+            if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, mazeGenerator->getMazeSize()))
             {
                 cameraPosition = lastPosition;
             }
         }
 
         if (state[SDL_SCANCODE_LEFT])
+        {
             yawAngle -= cameraSpeed;
+        }
         
 
         if (state[SDL_SCANCODE_RIGHT])
-            yawAngle += cameraSpeed;
-
-        if (state[SDL_SCANCODE_N]) //Generate new maze
         {
-            cameraPosition = glm::vec3(maze.getStartX()*1.0f, 0.0f, maze.getStartY()*1.0f);
-            maze.generateMaze();
+            yawAngle += cameraSpeed;
         }
 
         if (state[SDL_SCANCODE_ESCAPE])
+        {
             isRunning = false;
+        }
 
         //Setup camera
         cameraFront.x = cos(glm::radians(yawAngle));
@@ -512,9 +562,9 @@ int main(int argc, char* argv[])
         //It should draw only visible walls so we are checking if we are on empty field and then check all four neighbours
         //Wall is only visible if neighbour is filled field, if it is we move and rotate plane in the right position to make cube
         //Same goes for floor and ceiling
-        for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude border
+        for (unsigned int i = 1; i < mazeGenerator->getMazeSize() - 1; i++) //Exclude border
         {
-            for (unsigned int j = 1; j < maze.getMazeSize() - 1; j++)
+            for (unsigned int j = 1; j < mazeGenerator->getMazeSize() - 1; j++)
             {
                 //Walls are rendered around empty fields so skip filled fields
                 if (mazeArray[i][j])
@@ -604,6 +654,8 @@ int main(int argc, char* argv[])
         //Swap buffers and end drawing
         SDL_GL_SwapWindow(mainWindow);
     }
+
+    delete mazeGenerator;
 
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(mainWindow);
