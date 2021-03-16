@@ -509,13 +509,19 @@ int main(int argc, char* argv[])
         glBindVertexArray(vertexArrayObject);
 
         //Draw walls, floor and ceiling
-        //It should draw only visible walls so we are checking if we are on filled field and then check all four neighbours
-        //Wall is only visible if neighbour is empty field, if it is we move and rotate plane in the right position to make cube
+        //It should draw only visible walls so we are checking if we are on empty field and then check all four neighbours
+        //Wall is only visible if neighbour is filled field, if it is we move and rotate plane in the right position to make cube
         //Same goes for floor and ceiling
-        for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude margin
+        for (unsigned int i = 1; i < maze.getMazeSize() - 1; i++) //Exclude border
         {
             for (unsigned int j = 1; j < maze.getMazeSize() - 1; j++)
             {
+                //Walls are rendered around empty fields so skip filled fields
+                if (mazeArray[i][j])
+                {
+                    continue;
+                }
+
                 //Don't draw anything that is further than 20
                 //If it is then it's pretty big chance it won't be visible so it's very simple optimization
                 //With big mazes there is chance that end of long hall will be invisible because it's further than 20 but it most cases it works fine
@@ -528,74 +534,70 @@ int main(int argc, char* argv[])
                 //Bind wall texture
                 glBindTexture(GL_TEXTURE_2D, mazeTextures[0]);
 
-                if (mazeArray[i][j] && !mazeArray[i][j-1]) //Left
+                if (mazeArray[i][j-1]) //Left
                 {
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
                     model = glm::translate(model, glm::vec3(-0.5f, 0.0f, 0.0f)); //Move left a bit
-                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //Rotate by 90 degrees around Y
-
-                    shader.setUniformMatrix4fv("model", model);
-                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                }
-                
-                if (!mazeArray[i][j+1] && mazeArray[i][j]) //Right
-                {
-                    model = glm::mat4(1.0f);
-                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
-                    model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f)); //Move right a bit
                     model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //Rotate by 90 degrees around Y
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
                 
-                if (!mazeArray[i-1][j] && mazeArray[i][j]) //Front
+                if (mazeArray[i][j+1]) //Right
                 {
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
-                    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.5f)); //Move front a bit
+                    model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f)); //Move right a bit
+                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //Rotate by 90 degrees around Y
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
                 
-                if (!mazeArray[i+1][j] && mazeArray[i][j]) //Back
+                if (mazeArray[i-1][j]) //Front
+                {
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
+                    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.5f)); //Move front a bit
+                    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                    shader.setUniformMatrix4fv("model", model);
+                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                }
+                
+                if (mazeArray[i+1][j]) //Back
                 {
                     model = glm::mat4(1.0f);
                     model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f)); //Move to right position
                     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.5f)); //Move back a bit
-                    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
                     shader.setUniformMatrix4fv("model", model);
                     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
                 }
 
                 //Draw floor and ceiling
-                if (!mazeArray[i][j]) //Draw floor/ceiling tile only under empty fields
-                {
-                    //Floor
-                    glBindTexture(GL_TEXTURE_2D, mazeTextures[1]);
+                glBindTexture(GL_TEXTURE_2D, mazeTextures[1]);
 
-                    model = glm::mat4(1.0f);
-                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
-                    model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
-                    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
+                model = glm::translate(model, glm::vec3(0.0f, -0.5f, 0.0f));
+                model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-                    shader.setUniformMatrix4fv("model", model);
-                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                shader.setUniformMatrix4fv("model", model);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-                    //Ceiling
-                    glBindTexture(GL_TEXTURE_2D, mazeTextures[2]);
+                //Ceiling
+                glBindTexture(GL_TEXTURE_2D, mazeTextures[2]);
 
-                    model = glm::mat4(1.0f);
-                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
-                    model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
-                    model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
+                model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+                model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-                    shader.setUniformMatrix4fv("model", model);
-                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-                }
+                shader.setUniformMatrix4fv("model", model);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             }
         }
 
