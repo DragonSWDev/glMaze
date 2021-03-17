@@ -66,6 +66,9 @@ void MazeGenerator::setExit()
             case Direction::TOP:
                 if (mazeArray[1][exitIndex] == false)
                 {
+                    endX = exitIndex;
+                    endY = 1;
+                    endBorder = Direction::TOP;
                     mazeArray[0][exitIndex] = false;
                     foundExit = true;
                 }
@@ -75,6 +78,9 @@ void MazeGenerator::setExit()
             case Direction::BOTTOM:
                 if (mazeArray[mazeSize - 2][exitIndex] == false)
                 {
+                    endX = exitIndex;
+                    endY = mazeSize - 2;
+                    endBorder = Direction::BOTTOM;
                     mazeArray[mazeSize - 1][exitIndex] = false;
                     foundExit = true;
                 }
@@ -84,6 +90,9 @@ void MazeGenerator::setExit()
             case Direction::LEFT:
                 if (mazeArray[exitIndex][1] == false)
                 {
+                    endX = 1;
+                    endY = exitIndex;
+                    endBorder = Direction::LEFT;
                     mazeArray[exitIndex][0] = false;
                     foundExit = true;
                 }
@@ -93,6 +102,9 @@ void MazeGenerator::setExit()
             case Direction::RIGHT:
                 if (mazeArray[exitIndex][mazeSize - 2] == false)
                 {
+                    endX = mazeSize - 2;
+                    endY = exitIndex;
+                    endBorder = Direction::RIGHT;
                     mazeArray[exitIndex][mazeSize - 1] = false;
                     foundExit = true;
                 }
@@ -120,4 +132,19 @@ unsigned int MazeGenerator::getStartX()
 unsigned int MazeGenerator::getStartY()
 {
     return startY;
+}
+
+unsigned int MazeGenerator::getEndX()
+{
+    return endX;
+}
+
+unsigned int MazeGenerator::getEndY()
+{
+    return endY;
+}
+
+MazeGenerator::Direction MazeGenerator::getEndBorder()
+{
+    return endBorder;
 }

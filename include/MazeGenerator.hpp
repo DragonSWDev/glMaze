@@ -8,20 +8,9 @@
 //Defines some common fields, virtual methods and implements some common methods
 class MazeGenerator
 {
-    protected:
+    public:
         enum Direction { TOP = 0, BOTTOM = 1, LEFT = 2, RIGHT = 3 };
 
-        unsigned int mazeSize, startX, startY;
-        bool** mazeArray;
-        bool arrayAllocated;
-        std::mt19937 randomEngine;
-
-        virtual void allocateArray() = 0;
-        int getRandomNumber(int min, int max);
-        void setStartPosition();
-        void setExit();
-
-    public:
         MazeGenerator(unsigned int size, std::string seed = "");
         virtual ~MazeGenerator();
 
@@ -31,6 +20,21 @@ class MazeGenerator
         unsigned int getMazeSize();
         unsigned int getStartX();
         unsigned int getStartY();
+        unsigned int getEndX();
+        unsigned int getEndY();
+        Direction getEndBorder();
+
+    protected:
+        unsigned int mazeSize, startX, startY, endX, endY;
+        bool** mazeArray;
+        bool arrayAllocated;
+        std::mt19937 randomEngine;
+        Direction endBorder;
+
+        virtual void allocateArray() = 0;
+        int getRandomNumber(int min, int max);
+        void setStartPosition();
+        void setExit();
 };
 
 #endif

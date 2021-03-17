@@ -19,9 +19,9 @@ std::string mazeSeed;
 
 Generator selectedGenerator;
 
-//Check collision between point (camera/player) and cube (maze field)
+//Check collision between point (camera/player) and rectangle (maze field)
 //For cube add some margin (0.2f) to avoid watching through walls
-bool checkCollisionPointCube(float pointX, float pointY, float wallX, float wallY)
+bool checkCollisionPointReactangle(float pointX, float pointY, float wallX, float wallY)
 {
     if (pointX >= wallX - 0.7f && pointX <= wallX + 0.7f &&
         pointY >= wallY - 0.7f && pointY <= wallY + 0.7f)
@@ -54,7 +54,7 @@ bool checkCollision(float positionX, float positionZ, bool** mazeArray, int maze
         for (int j =  startColumn; j < std::min(startColumn + 4, mazeSize); j++)
         {
             //Collision occurs when player is on non empty field (true in maze array)
-            if (mazeArray[i][j] && checkCollisionPointCube(positionX, positionZ, j*1.0f, i*1.0f))
+            if (mazeArray[i][j] && checkCollisionPointReactangle(positionX, positionZ, j*1.0f, i*1.0f))
             {
                  collide = true;
                  break; //If collision happened then stop checking, there is no need to check further
@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
         std::cerr << "SDL init failed! Error: " << SDL_GetError() << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
 
     //Fullscreen requested, get display mode
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
         if (SDL_GetDesktopDisplayMode(0, &mode) != 0) 
         {
             std::cerr << "Failed to get current display mode!" << SDL_GetError() << std::endl;
-            return -1;
+            return EXIT_FAILURE;
         }
 
         windowWidth = mode.w;
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
     if (mainWindow == nullptr)
     {
         std::cout << "Failed creating SDL Window!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
     
     SDL_GLContext glContext = SDL_GL_CreateContext(mainWindow);
@@ -281,14 +281,14 @@ int main(int argc, char* argv[])
     if (glContext == nullptr) 
     {
         std::cout << "Error creating OpenGL context!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
 
     //Init GLAD
     if(!gladLoadGLLoader(SDL_GL_GetProcAddress))
     {
         std::cerr << "Failed initializing GLAD!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
 
     std::cout << "OpenGL initialized" << std::endl;
@@ -325,7 +325,7 @@ int main(int argc, char* argv[])
     if (!shader.loadShaders("./shaders/vertexshader.vert", "./shaders/fragmentshader.frag"))
     {
         std::cerr << "Shader loading or compilation failed!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
 
     //Loading wall texture
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
     if (wallImage == nullptr)
     {
         std::cerr << "Failed loading wall.png texture!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
 
     //Loading floor texture
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
     if (floorImage == nullptr)
     {
         std::cerr << "Failed loading floor.png texture!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
 
     SDL_Surface* ceilingImage = IMG_Load("./assets/ceiling.png");
@@ -351,7 +351,15 @@ int main(int argc, char* argv[])
     if (ceilingImage == nullptr)
     {
         std::cerr << "Failed loading ceiling.png texture!" << std::endl;
-        return -1;
+        return EXIT_FAILURE;
+    }
+
+    SDL_Surface* exitImage = IMG_Load("./assets/exit.png");
+
+    if (ceilingImage == nullptr)
+    {
+        std::cerr << "Failed loading exit.png texture!" << std::endl;
+        return EXIT_FAILURE;
     }
 
     GLuint vertexBufferObject, vertexArrayObject, elementArrayBuffer;
@@ -378,8 +386,8 @@ int main(int argc, char* argv[])
     glEnableVertexAttribArray(2);
 
     //Create OpenGL textures
-    GLuint mazeTextures[3];
-    glGenTextures(3, mazeTextures);
+    GLuint mazeTextures[4];
+    glGenTextures(4, mazeTextures);
 
     //Setup wall texture
     glBindTexture(GL_TEXTURE_2D, mazeTextures[0]);
@@ -418,9 +426,26 @@ int main(int argc, char* argv[])
     
     glGenerateMipmap(GL_TEXTURE_2D);
 
+    //Setup exit texture
+    glBindTexture(GL_TEXTURE_2D, mazeTextures[3]);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, exitImage->w, exitImage->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, exitImage->pixels); //Get texture data from SDL surface
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    delete wallImage;
+    delete floorImage;
+    delete ceilingImage;
+    delete exitImage;
 
     //Set model, view and projection matrices
     glm::mat4 model = glm::mat4(1.0f);
@@ -523,6 +548,12 @@ int main(int argc, char* argv[])
         }
 
         if (state[SDL_SCANCODE_ESCAPE])
+        {
+            isRunning = false;
+        }
+
+        //End game if player is near to exit
+        if (checkCollisionPointReactangle(cameraPosition.x, cameraPosition.z, mazeGenerator->getEndX(), mazeGenerator->getEndY()))
         {
             isRunning = false;
         }
@@ -641,6 +672,44 @@ int main(int argc, char* argv[])
 
                 shader.setUniformMatrix4fv("model", model);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+                //Exit is visible so draw it
+                if (j == mazeGenerator->getEndX() && i == mazeGenerator->getEndY())
+                {
+                    glBindTexture(GL_TEXTURE_2D, mazeTextures[3]);
+
+                    model = glm::mat4(1.0f);
+                    model = glm::translate(model, glm::vec3(j*1.0f, 0.0f, i*1.0f));
+
+                    switch (mazeGenerator->getEndBorder())
+                    {
+                        case MazeGenerator::LEFT:
+                            model = glm::translate(model, glm::vec3(-0.5f, 0.0f, 0.0f));
+                            model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                            break;
+
+                        case MazeGenerator::RIGHT:
+                            model = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f)); 
+                            model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+
+                            break;
+
+                        case MazeGenerator::TOP:
+                            model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.5f)); 
+                            model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                            break;
+
+                        case MazeGenerator::BOTTOM:
+                            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.5f));
+
+                            break;
+                    }
+
+                    shader.setUniformMatrix4fv("model", model);
+                    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+                }
             }
         }
 
