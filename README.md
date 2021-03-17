@@ -32,7 +32,8 @@ Configurations is specified by command line arguments. Options can be specified 
 **-height=value** - Window height
 #### Note: This values are respected only if game works in windowed mode. In fullscreen mode game always set desktop resolution. With custom window size both values (width and height) needs to be specified and height can't be bigger than width. Default size is 800x600.
 
-**-size=value** - Maze size (Default 20)
+**-size=value** - Maze size (Min is 10, max is 100000, default 20). 
+#### Note: For big mazes (more than 1000) it's better to use RD generator because DFS is pretty slow and generating big mazes will last long time even on fast CPU. Big mazes will also consume more memory. For 100000 size (RD generator) application consumes over 9 GiB of RAM.
 
 **-disable-collisions** - Disable collisions
 
@@ -44,9 +45,6 @@ Configurations is specified by command line arguments. Options can be specified 
 
 ### Controls
 Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key Escape will close the game.
-
-### Optimizations
-Since it's my first "serious" OpenGL application there are still things to optimize and improve. I've performed some basic optimizations like not rendering walls which player will never be able to see and not rendering anything that is further than certain distance.
 
 ## License
 glMaze is distributed under MIT License (see LICENSE file for more informations). Project is using SDL2, SDL_image and GLAD. For informations about these libraries licensing see their respective websites. Assets are made by me and distributed under CC BY 4.0 license. See details here: https://creativecommons.org/licenses/by/4.0/

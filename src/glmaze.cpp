@@ -75,12 +75,6 @@ bool checkCollision(float positionX, float positionZ, bool** mazeArray, int maze
     return false;
 }
 
-//Get distance between to points in 3D space
-float getDistance(glm::vec3 pointA, glm::vec3 pointB)
-{
-    return glm::length(pointB - pointA);
-}
-
 //Parse command line arguments and set correct values (fallback to default values if they are wrong)
 void parseArguments(std::vector<std::string> arguments)
 {
@@ -136,7 +130,7 @@ void parseArguments(std::vector<std::string> arguments)
                 size = 0;
             }
 
-            if (size < 10 || size > 1000)
+            if (size < 10 || size > 100000)
                 mazeSize = 20;
             else
                 mazeSize = size;
@@ -558,25 +552,24 @@ int main(int argc, char* argv[])
 
         glBindVertexArray(vertexArrayObject);
 
+        //Only small area around player needs to be drawn so there is no need to check whole array every time
+        //Calculate starting and ending row/column from actual player position
+        //Rendering will be fast no matter how big array will be because we check and render small part of array
+        int startRow = std::max(1, (int)cameraPosition.z - 15);
+        int startColumn = std::max(1, (int)cameraPosition.x - 15);
+        int endRow = std::min((int)mazeGenerator->getMazeSize() - 1, (int)cameraPosition.z + 15);
+        int endColumn = std::min((int)mazeGenerator->getMazeSize() - 1, (int)cameraPosition.x + 15);
+
         //Draw walls, floor and ceiling
         //It should draw only visible walls so we are checking if we are on empty field and then check all four neighbours
-        //Wall is only visible if neighbour is filled field, if it is we move and rotate plane in the right position to make cube
+        //Wall is only visible if neighbour is filled field, if it is we move and rotate plane in the right position to make walls around field
         //Same goes for floor and ceiling
-        for (unsigned int i = 1; i < mazeGenerator->getMazeSize() - 1; i++) //Exclude border
+        for (unsigned int i = startRow; i < endRow; i++)
         {
-            for (unsigned int j = 1; j < mazeGenerator->getMazeSize() - 1; j++)
+            for (unsigned int j = startColumn; j < endColumn; j++)
             {
                 //Walls are rendered around empty fields so skip filled fields
                 if (mazeArray[i][j])
-                {
-                    continue;
-                }
-
-                //Don't draw anything that is further than 20
-                //If it is then it's pretty big chance it won't be visible so it's very simple optimization
-                //With big mazes there is chance that end of long hall will be invisible because it's further than 20 but it most cases it works fine
-                //It's still better than drawing everything because performance won't drop in big mazes
-                if (getDistance(cameraPosition, glm::vec3(j*1.0f, 0.0f, i*1.0f)) > 20.0f)
                 {
                     continue;
                 }
