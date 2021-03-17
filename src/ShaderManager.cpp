@@ -13,11 +13,11 @@ bool ShaderManager::loadShaders(const char* vertexShaderPath, const char* fragme
     std::string vertexShaderCode, fragmentShaderCode;
     std::ifstream vertexShaderFile, fragmentShaderFile;
 
-    try
-    {
-        vertexShaderFile.open(vertexShaderPath);
-        fragmentShaderFile.open(fragmentShaderPath);
+    vertexShaderFile.open(vertexShaderPath);
+    fragmentShaderFile.open(fragmentShaderPath);
 
+    if (vertexShaderFile.is_open() && fragmentShaderFile.is_open())
+    {
         std::stringstream vertexShaderStream, fragmentShaderStream;
 
         vertexShaderStream << vertexShaderFile.rdbuf();
@@ -29,9 +29,8 @@ bool ShaderManager::loadShaders(const char* vertexShaderPath, const char* fragme
         vertexShaderCode = vertexShaderStream.str();
         fragmentShaderCode = fragmentShaderStream.str();
     }
-    catch(std::ifstream::failure &e)
+    else
     {
-        std::cerr << e.what() << std::endl;
         return false;
     }
     

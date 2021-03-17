@@ -21,7 +21,7 @@ make
 ```console
 ./glmaze
 ```
-#### Note: "assets" and "shaders" directory needs to be present in same directory as exectuable.
+#### Note: "assets" and "shaders" directories are expected to be present in the same directory as executable or in "../share/glmaze" directory. If both are present then binary directory will be used.
 
 ## Manual
 ### Configuration options
@@ -30,7 +30,7 @@ Configurations is specified by command line arguments. Options can be specified 
 **-width=value** - Window width
 
 **-height=value** - Window height
-#### Note: This values are respected only if game works in windowed mode. In fullscreen mode game always set desktop resolution. With custom window size both values (width and height) needs to be specified and height can't be bigger than width. Default size is 800x600.
+#### Note: These values are respected only if game works in windowed mode. In fullscreen mode game always set desktop resolution. With custom window size both values (width and height) needs to be specified and height can't be bigger than width. Default size is 800x600.
 
 **-size=value** - Maze size (Min is 10, max is 100000, default 20). 
 #### Note: For big mazes (more than 1000) it's better to use RD generator because DFS is pretty slow and generating big mazes will last long time even on fast CPU. Big mazes will also consume more memory. For 100000 size (RD generator) application consumes over 9 GiB of RAM.

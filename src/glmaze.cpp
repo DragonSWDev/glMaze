@@ -204,6 +204,9 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    //Get binary location which will be used to load assets
+    std::string installDir(SDL_GetBasePath());
+
     //Fullscreen requested, get display mode
     if (setFullscreen)
     {
@@ -262,7 +265,7 @@ int main(int argc, char* argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-    SDL_Window *mainWindow = SDL_CreateWindow("OpenGL Maze", 0, 0, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
+    SDL_Window* mainWindow = SDL_CreateWindow("OpenGL Maze", 0, 0, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
 
     if (setFullscreen)
     {
@@ -320,46 +323,88 @@ int main(int argc, char* argv[])
         1, 2, 3 //Second triangle
     };
 
+    //Loading assets
+    //First check directory where binary sits
+    //If loading failed then check "../share/glmaze" directory
+
+    //Load icon
+    //Lack of icon file is not fatal error so it can continue when icon can't be loaded
+    SDL_Surface* windowIcon = IMG_Load((installDir + "assets/icon.png").c_str());
+
+    if (windowIcon == nullptr)
+    {
+        windowIcon = IMG_Load((installDir + "../share/glmaze/assets/icon.png").c_str());
+    }
+
+    if (windowIcon != nullptr)
+    {
+        SDL_SetWindowIcon(mainWindow, windowIcon);
+    }
+
+    //Shaders
     ShaderManager shader;
     
-    if (!shader.loadShaders("./shaders/vertexshader.vert", "./shaders/fragmentshader.frag"))
+    if (!shader.loadShaders((installDir + "shaders/vertexshader.vert").c_str(), (installDir + "shaders/fragmentshader.frag").c_str()))
     {
-        std::cerr << "Shader loading or compilation failed!" << std::endl;
-        return EXIT_FAILURE;
+        if (!shader.loadShaders((installDir + "../share/glmaze/shaders/vertexshader.vert").c_str(), (installDir + "../share/glmaze/shaders/fragmentshader.frag").c_str()))
+        {
+            std::cerr << "Failed loading shaders!" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     //Loading wall texture
-    SDL_Surface* wallImage = IMG_Load("./assets/wall.png");
+    SDL_Surface* wallImage = IMG_Load((installDir + "assets/wall.png").c_str());
 
     if (wallImage == nullptr)
     {
-        std::cerr << "Failed loading wall.png texture!" << std::endl;
-        return EXIT_FAILURE;
+        wallImage = IMG_Load((installDir + "../share/glmaze/assets/wall.png").c_str());
+
+        if (wallImage == nullptr)
+        {
+            std::cerr << "Failed loading wall.png texture!" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     //Loading floor texture
-    SDL_Surface* floorImage = IMG_Load("./assets/floor.png");
+    SDL_Surface* floorImage = IMG_Load((installDir + "assets/floor.png").c_str());
 
     if (floorImage == nullptr)
     {
-        std::cerr << "Failed loading floor.png texture!" << std::endl;
-        return EXIT_FAILURE;
+        floorImage = IMG_Load((installDir + "../share/glmaze/assets/floor.png").c_str());
+
+        if (floorImage == nullptr)
+        {
+            std::cerr << "Failed loading floor.png texture!" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
-    SDL_Surface* ceilingImage = IMG_Load("./assets/ceiling.png");
+    SDL_Surface* ceilingImage = IMG_Load((installDir + "assets/ceiling.png").c_str());
 
     if (ceilingImage == nullptr)
     {
-        std::cerr << "Failed loading ceiling.png texture!" << std::endl;
-        return EXIT_FAILURE;
+        ceilingImage = IMG_Load((installDir + "../share/glmaze/assets/ceiling.png").c_str());
+
+        if (ceilingImage == nullptr)
+        {
+            std::cerr << "Failed loading ceiling.png texture!" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
-    SDL_Surface* exitImage = IMG_Load("./assets/exit.png");
+    SDL_Surface* exitImage = IMG_Load((installDir + "assets/exit.png").c_str());
 
-    if (ceilingImage == nullptr)
+    if (exitImage == nullptr)
     {
-        std::cerr << "Failed loading exit.png texture!" << std::endl;
-        return EXIT_FAILURE;
+        exitImage = IMG_Load((installDir + "../share/glmaze/assets/exit.png").c_str());
+
+        if (exitImage == nullptr)
+        {
+            std::cerr << "Failed loading exit.png texture!" << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     GLuint vertexBufferObject, vertexArrayObject, elementArrayBuffer;
@@ -442,10 +487,11 @@ int main(int argc, char* argv[])
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    delete wallImage;
-    delete floorImage;
-    delete ceilingImage;
-    delete exitImage;
+    //Free image surfaces, their data was copied to OpenGL so they are not needed anymore
+    SDL_FreeSurface(wallImage);
+    SDL_FreeSurface(floorImage);
+    SDL_FreeSurface(ceilingImage);
+    SDL_FreeSurface(exitImage);
 
     //Set model, view and projection matrices
     glm::mat4 model = glm::mat4(1.0f);
@@ -718,6 +764,11 @@ int main(int argc, char* argv[])
     }
 
     delete mazeGenerator;
+
+    if (windowIcon != nullptr)
+    {
+        SDL_FreeSurface(windowIcon);
+    }
 
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(mainWindow);
