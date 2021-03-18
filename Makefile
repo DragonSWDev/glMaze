@@ -1,7 +1,7 @@
 TARGET = glmaze
 CPPFILES = src/glad.cpp src/ShaderManager.cpp src/MazeGenerator.cpp src/MazeGeneratorDFS.cpp src/MazeGeneratorRD.cpp src/glmaze.cpp
 OBJS = $(CPPFILES:.cpp=.o)
-CXXFLAGS = -Wall -pedantic -std=c++11 -O2 -I./include
+CXXFLAGS = -Wall -pedantic -std=c++11 -O2 -I./include -I/usr/include/SDL2 -I/usr/local/include/SDL2
 LDFLAGS = -s -lSDL2 -lSDL2_image -lGL -ldl
 
 all: $(TARGET)

@@ -1,10 +1,11 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include <SDL.h>
+#include <SDL_image.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <string>
 
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
@@ -265,7 +266,7 @@ int main(int argc, char* argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-    SDL_Window* mainWindow = SDL_CreateWindow("OpenGL Maze", 0, 0, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
+    SDL_Window* mainWindow = SDL_CreateWindow("OpenGL Maze", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
 
     if (setFullscreen)
     {

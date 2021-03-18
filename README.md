@@ -5,22 +5,24 @@ This is a simple modern OpenGL game that I wrote after completing first step of 
 
 ## Installation guide
 
-### 1. Install SDL2 with SDL_image and OpenGL development libraries
+### 1. Install SDL2 with SDL_image and OpenGL development libraries (refer to the documentation to get instructions for your platform)
 
-### 2. Clone repository with command
-```console
-$ git clone https://github.com/DragonSWDev/glMaze && cd glMaze
-```
+### 2. Clone repository
 
 ### 3. Build
+#### *nix:
+Use make command
 ```console
 make
 ```
 
+#### Windows:
+Open glMaze solution from VC directory in Visual Studio, setup directories for SDL2, SDL2_image and glm include files and libraries in project settings then build solution.
+
 ### 4. Run
-```console
-./glmaze
-```
+
+Run compiled binary.
+
 #### Note: "assets" and "shaders" directories are expected to be present in the same directory as executable or in "../share/glmaze" directory. If both are present then binary directory will be used.
 
 ## Manual
