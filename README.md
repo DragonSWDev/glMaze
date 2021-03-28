@@ -49,4 +49,4 @@ Configurations is specified by command line arguments. Options can be specified 
 Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key Escape will close the game.
 
 ## License
-glMaze is distributed under MIT License (see LICENSE file for more informations). Project is using SDL2, SDL_image and GLAD. For informations about these libraries licensing see their respective websites. Assets are made by me and distributed under CC BY 4.0 license. See details here: https://creativecommons.org/licenses/by/4.0/
+glMaze is distributed under the terms of MIT License. Project depends on OpenGL, SDL2, SDL_image and GLAD. For information about these libraries licensing check their respective websites. Assets are made by me and distributed under CC BY 4.0 license.
