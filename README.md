@@ -1,5 +1,5 @@
 # glMaze
-This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search and recursive division algorithms) perfect maze. It's implemented using OpenGL, SDL2, GLM and GLAD libraries.
+This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search and recursive division algorithms) perfect maze. It's implemented using OpenGL, SDL2, mINI, GLM and GLAD libraries.
 
 <span style="display:block;text-align:center">![Screenshot](./doc/screenshot.png)
 
@@ -28,7 +28,7 @@ On Windows and Linux glmaze expects "assets" and "shaders" directory to be prese
 
 ## Manual
 ### Configuration options
-Configurations is specified by command line arguments. Options can be specified in any order and count.
+Configurations is specified by command line arguments or by ini configuration file. Command line options can be specified in any order and count. Command line arguments have higher priority. 
 
 **-width=value** - Window width
 
@@ -46,8 +46,21 @@ Configurations is specified by command line arguments. Options can be specified 
 
 **-seed=value** - Generator seed
 
+**-portable** - Don't try to load or create config file
+
+Configuration file is located in following directories:
+
+#### Linux
+~/.local/share/DragonSWDev/glmaze/
+
+#### Windows
+%appdata%\DragonSWDev\glmaze\
+
+#### macOS
+~/Library/Application Support/glmaze/
+
 ### Controls
 Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key Escape will close the game.
 
 ## License
-glMaze is distributed under the terms of MIT License. Project depends on OpenGL, [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/), [GLM](https://github.com/g-truc/glm) and [GLAD](https://glad.dav1d.de/). For information about these libraries licensing check their respective websites. Assets were created by me and are distributed under the terms of [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
+glMaze is distributed under the terms of MIT License. Project depends on [OpenGL](https://www.opengl.org/), [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/), [GLM](https://github.com/g-truc/glm), [GLAD](https://glad.dav1d.de/) and [mINI](https://github.com/pulzed/mINI). For information about these libraries licensing check their respective websites. Assets were created by me and are distributed under the terms of [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.

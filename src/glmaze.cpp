@@ -6,10 +6,15 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <string>
+#include <filesystem>
 
+#include "MazeGenerator.hpp"
+#include "SDL_filesystem.h"
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
+
+#include "mini/ini.h"
 
 #if defined(WIN32) || defined(_WIN32)
     #define PATH_SEPARATOR "\\"
@@ -21,7 +26,7 @@
 enum Generator { DFS, RD };
 
 int windowWidth, windowHeight, mazeSize;
-bool enableCollisions, setFullscreen;
+bool enableCollisions, setFullscreen, setPortable;
 std::string mazeSeed;
 
 Generator selectedGenerator;
@@ -82,6 +87,109 @@ bool checkCollision(float positionX, float positionZ, bool** mazeArray, int maze
     return false;
 }
 
+//Check if config file is enabled (it's disabled when there is "-portable" command line argument)
+bool isConfigFileEnabled(std::vector<std::string> arguments)
+{
+    for (auto& argument : arguments)
+    {
+        if (argument.find("-portable") != std::string::npos)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void parseConfigFile(std::string configFileLocation)
+{
+    mINI::INIFile configFile(configFileLocation);
+	mINI::INIStructure iniStructure;
+
+    if (!std::filesystem::exists(configFileLocation)) //Check if config file exists, if not create it
+	{
+		//Create config file
+        iniStructure["Config"]["Fullscreen"] = "0";
+		iniStructure["Config"]["Width"] = "800";
+		iniStructure["Config"]["Height"] = "600";
+        iniStructure["Config"]["Size"] = "20";
+        iniStructure["Config"]["Collisions"] = "1";
+        iniStructure["Config"]["Generator"] = "RD";
+
+
+		if(!configFile.generate(iniStructure))
+        {
+            return;
+        }
+	}
+    
+    if (configFile.read(iniStructure)) //Try to load existing config file
+	{
+		int width = -1, height = -1, size = -1, fullscreen = -1, collisions = -1;
+        std::string generator;
+
+		try
+		{
+            width = std::stoi(iniStructure["Config"]["Width"]);
+            height = std::stoi(iniStructure["Config"]["Height"]);
+            size = std::stoi(iniStructure["Config"]["Size"]);
+
+            fullscreen = std::stoi(iniStructure["Config"]["Fullscreen"]);
+            collisions = std::stoi(iniStructure["Config"]["Collisions"]);
+
+            generator = iniStructure["Config"]["Generator"];
+		}
+		catch (...)
+		{
+			std::cerr << "Reading config failed" << std::endl;
+			return;
+		}
+        
+        //Check if values are valid and set them
+        if (width < 100 || width > 7680 || height < 100 || height > 4320)
+        {
+            width = 800;
+            height = 600;
+        }
+
+        if (height > width)
+        {
+            height = width;
+        }
+
+        windowWidth = width;
+        windowHeight = height;
+
+        if (size < 10 || size > 100000)
+        {
+            mazeSize = 20;
+        }
+        else
+        {
+            mazeSize = size;
+        }
+
+        if (fullscreen == 0 || fullscreen == 1)
+        {
+            setFullscreen = fullscreen;
+        }
+
+        if (collisions == 0 || collisions == 1)
+        {
+            enableCollisions = collisions;
+        }
+
+        if (generator == "RD")
+        {
+            selectedGenerator = Generator::RD;
+        }
+        else if (generator == "DFS")
+        {
+            selectedGenerator = Generator::DFS;
+        }
+	}
+}
+
 //Parse command line arguments and set correct values (fallback to default values if they are wrong)
 void parseArguments(std::vector<std::string> arguments)
 {
@@ -138,9 +246,13 @@ void parseArguments(std::vector<std::string> arguments)
             }
 
             if (size < 10 || size > 100000)
+            {
                 mazeSize = 20;
+            }
             else
+            {
                 mazeSize = size;
+            }
         }
 
         if (argument.find("-generator=") != std::string::npos && argument.size() > 11)
@@ -165,10 +277,14 @@ void parseArguments(std::vector<std::string> arguments)
         }
 
         if (argument.find("-disable-collisions") != std::string::npos)
+        {
             enableCollisions = false;
+        }
 
         if (argument.find("-fullscreen") != std::string::npos)
+        {
             setFullscreen = true;
+        }
     }
 
     //Set correct resolution (only for window, full screen uses native resolution)
@@ -179,7 +295,9 @@ void parseArguments(std::vector<std::string> arguments)
     }
 
     if (height > width)
+    {
         height = width;
+    }
 
     windowWidth = width;
     windowHeight = height;
@@ -192,17 +310,35 @@ int main(int argc, char* argv[])
     mazeSize = 20;
     enableCollisions = true;
     setFullscreen = false;
+    setPortable = false;
     mazeSeed = "";
     selectedGenerator = Generator::RD; //Recursive division maze generator
 
+    std::string prefPath;
+
+    //Get command line arguments
     std::vector<std::string> arguments;
 
-    if (argc > 1)
+    if (argc > 1) //Command line arguments are provided
     {
         for (int i = 1; i < argc; i++)
+        {
             arguments.push_back(argv[i]);
+        }
 
-        parseArguments(arguments);
+        if (isConfigFileEnabled(arguments)) //Only load config file if it wasn't disabled by "-portable" argument
+        {
+            prefPath.append(SDL_GetPrefPath("DragonSWDev", "glmaze"));
+
+            parseConfigFile(prefPath + "config.ini");
+        }
+
+        parseArguments(arguments); //Command lines argument will overwrite configuration file
+    }
+    else
+    {
+        prefPath.append(SDL_GetPrefPath("DragonSWDev", "glmaze"));
+        parseConfigFile(prefPath + "config.ini");
     }
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
