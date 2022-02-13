@@ -11,6 +11,12 @@
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
 
+#if defined(WIN32) || defined(_WIN32)
+    #define PATH_SEPARATOR "\\"
+#else
+    #define PATH_SEPARATOR "/"
+#endif
+
 //Available maze generators
 enum Generator { DFS, RD };
 
@@ -57,8 +63,8 @@ bool checkCollision(float positionX, float positionZ, bool** mazeArray, int maze
             //Collision occurs when player is on non empty field (true in maze array)
             if (mazeArray[i][j] && checkCollisionPointReactangle(positionX, positionZ, j*1.0f, i*1.0f))
             {
-                 collide = true;
-                 break; //If collision happened then stop checking, there is no need to check further
+                collide = true;
+                break; //If collision happened then stop checking, there is no need to check further
             }
         }
 
@@ -166,7 +172,7 @@ void parseArguments(std::vector<std::string> arguments)
     }
 
     //Set correct resolution (only for window, full screen uses native resolution)
-    if (width < 100 || width > 4096 || height < 100 || height > 2160)
+    if (width < 100 || width > 7680 || height < 100 || height > 4320)
     {
         width = 800;
         height = 600;
@@ -266,7 +272,7 @@ int main(int argc, char* argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-    SDL_Window* mainWindow = SDL_CreateWindow("OpenGL Maze", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
+    SDL_Window* mainWindow = SDL_CreateWindow("glMaze", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowWidth, windowHeight, SDL_WINDOW_OPENGL);
 
     if (setFullscreen)
     {
@@ -324,88 +330,35 @@ int main(int argc, char* argv[])
         1, 2, 3 //Second triangle
     };
 
-    //Loading assets
-    //First check directory where binary sits
-    //If loading failed then check "../share/glmaze" directory
-
     //Load icon
     //Lack of icon file is not fatal error so it can continue when icon can't be loaded
-    SDL_Surface* windowIcon = IMG_Load((installDir + "assets/icon.png").c_str());
-
-    if (windowIcon == nullptr)
-    {
-        windowIcon = IMG_Load((installDir + "../share/glmaze/assets/icon.png").c_str());
-    }
+    SDL_Surface* windowIcon = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "icon.png").c_str());
 
     if (windowIcon != nullptr)
     {
         SDL_SetWindowIcon(mainWindow, windowIcon);
     }
 
-    //Shaders
+    //Loading shaders
     ShaderManager shader;
     
-    if (!shader.loadShaders((installDir + "shaders/vertexshader.vert").c_str(), (installDir + "shaders/fragmentshader.frag").c_str()))
+    if (!shader.loadShaders((installDir + "shaders" + PATH_SEPARATOR + "vertexshader.vert").c_str(), 
+                            (installDir + "shaders" + PATH_SEPARATOR +  "fragmentshader.frag").c_str()))
     {
-        if (!shader.loadShaders((installDir + "../share/glmaze/shaders/vertexshader.vert").c_str(), (installDir + "../share/glmaze/shaders/fragmentshader.frag").c_str()))
-        {
-            std::cerr << "Failed loading shaders!" << std::endl;
-            return EXIT_FAILURE;
-        }
+        std::cerr << "Failed loading shaders!" << std::endl;
+        return EXIT_FAILURE;
     }
 
-    //Loading wall texture
-    SDL_Surface* wallImage = IMG_Load((installDir + "assets/wall.png").c_str());
+    //Loading textures
+    SDL_Surface* wallImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "wall.png").c_str());
+    SDL_Surface* floorImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "floor.png").c_str());
+    SDL_Surface* ceilingImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "ceiling.png").c_str());
+    SDL_Surface* exitImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "exit.png").c_str());
 
-    if (wallImage == nullptr)
+    if (wallImage == nullptr || floorImage == nullptr || ceilingImage == nullptr || exitImage == nullptr)
     {
-        wallImage = IMG_Load((installDir + "../share/glmaze/assets/wall.png").c_str());
-
-        if (wallImage == nullptr)
-        {
-            std::cerr << "Failed loading wall.png texture!" << std::endl;
-            return EXIT_FAILURE;
-        }
-    }
-
-    //Loading floor texture
-    SDL_Surface* floorImage = IMG_Load((installDir + "assets/floor.png").c_str());
-
-    if (floorImage == nullptr)
-    {
-        floorImage = IMG_Load((installDir + "../share/glmaze/assets/floor.png").c_str());
-
-        if (floorImage == nullptr)
-        {
-            std::cerr << "Failed loading floor.png texture!" << std::endl;
-            return EXIT_FAILURE;
-        }
-    }
-
-    SDL_Surface* ceilingImage = IMG_Load((installDir + "assets/ceiling.png").c_str());
-
-    if (ceilingImage == nullptr)
-    {
-        ceilingImage = IMG_Load((installDir + "../share/glmaze/assets/ceiling.png").c_str());
-
-        if (ceilingImage == nullptr)
-        {
-            std::cerr << "Failed loading ceiling.png texture!" << std::endl;
-            return EXIT_FAILURE;
-        }
-    }
-
-    SDL_Surface* exitImage = IMG_Load((installDir + "assets/exit.png").c_str());
-
-    if (exitImage == nullptr)
-    {
-        exitImage = IMG_Load((installDir + "../share/glmaze/assets/exit.png").c_str());
-
-        if (exitImage == nullptr)
-        {
-            std::cerr << "Failed loading exit.png texture!" << std::endl;
-            return EXIT_FAILURE;
-        }
+        std::cerr << "Assets couldn't be loaded!" << std::endl;
+        return EXIT_FAILURE;
     }
 
     GLuint vertexBufferObject, vertexArrayObject, elementArrayBuffer;
@@ -488,7 +441,7 @@ int main(int argc, char* argv[])
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    //Free image surfaces, their data was copied to OpenGL so they are not needed anymore
+    //Free image surfaces, their data was copied to GPU so they are not needed anymore
     SDL_FreeSurface(wallImage);
     SDL_FreeSurface(floorImage);
     SDL_FreeSurface(ceilingImage);
@@ -527,7 +480,9 @@ int main(int argc, char* argv[])
         while (SDL_PollEvent(&windowEvent))
         {
             if (windowEvent.type == SDL_QUIT)
+            {
                 isRunning = false;
+            }
         } 
 
         //Setup delta time and movement/camera speed
