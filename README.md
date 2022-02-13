@@ -1,29 +1,30 @@
 # glMaze
-This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search and recursive division algorithms) perfect maze. It's implemented using OpenGL, SDL2 and GLAD libraries.
+This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search and recursive division algorithms) perfect maze. It's implemented using OpenGL, SDL2, GLM and GLAD libraries.
 
 <span style="display:block;text-align:center">![Screenshot](./doc/screenshot.png)
 
-## Installation guide
+## Build guide
 
-### 1. Install SDL2 with SDL_image and OpenGL development libraries (refer to the documentation to get instructions for your platform)
+### 1. Clone repository
 
-### 2. Clone repository
+### 2. Install SDL2, SDL2_image, GLM and OpenGL development libraries
+
+#### Linux
+Install SDL2, SDL2_image, GLM, OpenGL development libraries and cmake. For informations about installing packages check manual of distribution you are using.
+
+#### Windows
+Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/) and [GLM](https://github.com/g-truc/glm). Make sure to download development libraries for Visual C++. SDL2, SDL2_image and GLM are expected to be present in ext directory in source root. Create ext directory in source root and extract downloaded archives there. Change extracted directories names to SDL2, SDL2_image and glm respectively. If you wish to use different directories for dependencies modify CMakeLists.txt file to point SDL2_PATH, SDL2_IMAGE_PATH and GLM_ROOT_DIR variables to selected directories. OpenGL should come with graphics drivers. Build was tested with Visual Studio 2022 Community Edition but probably older versions should be able to build it as well (not tested).
+
+#### macOS
+Build was tested with framework installation. Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/) and [GLM](https://github.com/g-truc/glm). Install SDL2 and SDL2_image frameworks in /Library/Frameworks directory. Create ext directory, extract GLM and put glm directory there. OpenGL framework is part of operating system. Command line developers tools are also needed.
 
 ### 3. Build
-#### *nix:
-Use make command
-```console
-make
-```
 
-#### Windows:
-Open glMaze solution from VC directory in Visual Studio, setup directories for SDL2, SDL2_image and glm include files and libraries in project settings then build solution.
+CMake is used to generate build configuration for each platform. On Windows use CMake to generate Visual Studio solution and use Visual Studio for building. On Linux and macOS use CMake to generate Makefile configuration and use make command to build.
 
-### 4. Run
+### 4. Running
 
-Run compiled binary.
-
-#### Note: "assets" and "shaders" directories are expected to be present in the same directory as executable or in "../share/glmaze" directory. If both are present then binary directory will be used.
+On Windows and Linux glmaze expects "assets" and "shaders" directory to be present in the same directory as executable. On macOS build generates App Bundle and these directories are automatically copied into generated bundle.
 
 ## Manual
 ### Configuration options
@@ -49,4 +50,4 @@ Configurations is specified by command line arguments. Options can be specified 
 Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key Escape will close the game.
 
 ## License
-glMaze is distributed under the terms of MIT License. Project depends on OpenGL, SDL2, SDL_image and GLAD. For information about these libraries licensing check their respective websites. Assets are made by me and distributed under CC BY 4.0 license.
+glMaze is distributed under the terms of MIT License. Project depends on OpenGL, [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/), [GLM](https://github.com/g-truc/glm) and [GLAD](https://glad.dav1d.de/). For information about these libraries licensing check their respective websites. Assets were created by me and are distributed under the terms of [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
