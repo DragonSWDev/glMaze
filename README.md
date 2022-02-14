@@ -10,7 +10,7 @@ This is a simple modern OpenGL game that I wrote after completing first step of 
 ### 2. Install SDL2, SDL2_image, GLM and OpenGL development libraries
 
 #### Linux
-Install SDL2, SDL2_image, GLM, OpenGL development libraries and cmake. For informations about installing packages check manual of distribution you are using.
+Install SDL2, SDL2_image, GLM, OpenGL development libraries and cmake. For information about installing packages check manual of distribution you are using.
 
 #### Windows
 Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/) and [GLM](https://github.com/g-truc/glm). Make sure to download development libraries for Visual C++. SDL2, SDL2_image and GLM are expected to be present in ext directory in source root. Create ext directory in source root and extract downloaded archives there. Change extracted directories names to SDL2, SDL2_image and glm respectively. If you wish to use different directories for dependencies modify CMakeLists.txt file to point SDL2_PATH, SDL2_IMAGE_PATH and GLM_ROOT_DIR variables to selected directories. OpenGL should come with graphics drivers. Build was tested with Visual Studio 2022 Community Edition but probably older versions should be able to build it as well (not tested).
@@ -28,7 +28,7 @@ On Windows and Linux glmaze expects "assets" and "shaders" directory to be prese
 
 ## Manual
 ### Configuration options
-Configurations is specified by command line arguments or by ini configuration file. Command line options can be specified in any order and count. Command line arguments have higher priority. 
+Configurations is specified by command line arguments or by ini configuration file. Command line options can be specified in any order and count. Command line arguments have higher priority and will override config file values. 
 
 **-width=value** - Window width
 
