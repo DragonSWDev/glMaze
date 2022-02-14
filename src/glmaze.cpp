@@ -1,7 +1,6 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <glad/glad.h>
-#include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -10,11 +9,6 @@
 #include <filesystem>
 
 #include "MazeGenerator.hpp"
-#include "SDL_events.h"
-#include "SDL_filesystem.h"
-#include "SDL_mouse.h"
-#include "SDL_stdinc.h"
-#include "SDL_video.h"
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
