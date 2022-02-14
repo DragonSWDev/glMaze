@@ -48,6 +48,8 @@ Configurations is specified by command line arguments or by ini configuration fi
 
 **-portable** - Don't try to load or create config file
 
+**-disable-mouse** - Disable mouse control
+
 Configuration file is located in following directories:
 
 #### Linux
@@ -60,7 +62,7 @@ Configuration file is located in following directories:
 ~/Library/Application Support/glmaze/
 
 ### Controls
-Camera is controlled by keyboard, where Up and Down arrows are for moving forward/backward and Left and Right arrows are for rotating camera left/right. Key Escape will close the game.
+By default camera is controlled by mouse and W/S keys are used for moving forward/backward. When mouse control is disabled then camera is rotated left and right by A and D keys.
 
 ## License
 glMaze is distributed under the terms of MIT License. Project depends on [OpenGL](https://www.opengl.org/), [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/), [GLM](https://github.com/g-truc/glm), [GLAD](https://glad.dav1d.de/) and [mINI](https://github.com/pulzed/mINI). For information about these libraries licensing check their respective websites. Assets were created by me and are distributed under the terms of [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.

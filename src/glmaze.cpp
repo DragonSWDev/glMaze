@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <glad/glad.h>
+#include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -9,7 +10,11 @@
 #include <filesystem>
 
 #include "MazeGenerator.hpp"
+#include "SDL_events.h"
 #include "SDL_filesystem.h"
+#include "SDL_mouse.h"
+#include "SDL_stdinc.h"
+#include "SDL_video.h"
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
@@ -26,7 +31,7 @@
 enum Generator { DFS, RD };
 
 int windowWidth, windowHeight, mazeSize;
-bool enableCollisions, setFullscreen, setPortable;
+bool enableCollisions, setFullscreen, setPortable, mouseEnabled;
 std::string mazeSeed;
 
 Generator selectedGenerator;
@@ -115,6 +120,7 @@ void parseConfigFile(std::string configFileLocation)
         iniStructure["Config"]["Size"] = "20";
         iniStructure["Config"]["Collisions"] = "1";
         iniStructure["Config"]["Generator"] = "RD";
+        iniStructure["Config"]["mouse"] = "1";
 
 
 		if(!configFile.generate(iniStructure))
@@ -125,7 +131,7 @@ void parseConfigFile(std::string configFileLocation)
     
     if (configFile.read(iniStructure)) //Try to load existing config file
 	{
-		int width = -1, height = -1, size = -1, fullscreen = -1, collisions = -1;
+		int width = -1, height = -1, size = -1, fullscreen = -1, collisions = -1, mouse = -1;
         std::string generator;
 
 		try
@@ -136,6 +142,8 @@ void parseConfigFile(std::string configFileLocation)
 
             fullscreen = std::stoi(iniStructure["Config"]["Fullscreen"]);
             collisions = std::stoi(iniStructure["Config"]["Collisions"]);
+
+            mouse = std::stoi(iniStructure["Config"]["mouse"]);
 
             generator = iniStructure["Config"]["Generator"];
 		}
@@ -177,6 +185,11 @@ void parseConfigFile(std::string configFileLocation)
         if (collisions == 0 || collisions == 1)
         {
             enableCollisions = collisions;
+        }
+
+        if (mouse == 0)
+        {
+            mouseEnabled = false;
         }
 
         if (generator == "RD")
@@ -285,6 +298,11 @@ void parseArguments(std::vector<std::string> arguments)
         {
             setFullscreen = true;
         }
+
+        if (argument.find("-disable-mouse") != std::string::npos)
+        {
+            mouseEnabled = false;
+        }
     }
 
     //Set correct resolution (only for window, full screen uses native resolution)
@@ -311,6 +329,7 @@ int main(int argc, char* argv[])
     enableCollisions = true;
     setFullscreen = false;
     setPortable = false;
+    mouseEnabled = true;
     mazeSeed = "";
     selectedGenerator = Generator::RD; //Recursive division maze generator
 
@@ -370,7 +389,8 @@ int main(int argc, char* argv[])
     std::cout << "Resolution: " << windowWidth << "x" << windowHeight << " ";
     std::cout << (setFullscreen ? "fullscreen" : "windowed") << std::endl;
     std::cout << "Maze size: " << mazeSize << std::endl;
-    std::cout << (enableCollisions ? "Collisions enabled" : "Collisions disabled") << std::endl << std::endl;
+    std::cout << (enableCollisions ? "Collisions enabled" : "Collisions disabled") << std::endl;
+    std::cout << (mouseEnabled ? "Mouse control enabled" : "Mouse control disabled") << std::endl << std::endl;
 
     if (!mazeSeed.empty())
     {
@@ -595,12 +615,19 @@ int main(int argc, char* argv[])
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
-    float yawAngle = -90.0f;
+    float cameraYaw = -90.0f, cameraPitch = 0.0f;
 
     view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
 
     //Enable vsync
     SDL_GL_SetSwapInterval(1);
+
+    //Grab mouse for camera if mouse control is enabled
+    if (mouseEnabled)
+    {
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_CaptureMouse(SDL_TRUE);
+    }
 
     SDL_Event windowEvent;
     bool isRunning = true;
@@ -611,6 +638,8 @@ int main(int argc, char* argv[])
 
     glm::vec3 lastPosition = cameraPosition;
 
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+
     while (isRunning)
     {
         while (SDL_PollEvent(&windowEvent))
@@ -618,6 +647,24 @@ int main(int argc, char* argv[])
             if (windowEvent.type == SDL_QUIT)
             {
                 isRunning = false;
+            }
+
+            if (windowEvent.type == SDL_MOUSEMOTION && mouseEnabled) //Process mouse motion
+            {
+                float offsetX = windowEvent.motion.xrel * 0.4f;
+                float offsetY = windowEvent.motion.yrel * 0.4f;
+
+                cameraYaw += offsetX;
+                cameraPitch -= offsetY;
+
+                if (cameraPitch > 89.0f)
+                {
+                    cameraPitch = 89.0f;
+                }
+                else if (cameraPitch < -89.0f)
+                {
+                    cameraPitch = -89.0f;
+                }
             }
         } 
 
@@ -628,11 +675,11 @@ int main(int argc, char* argv[])
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        //Get SDL keyboard state
-        const Uint8 *state = SDL_GetKeyboardState(NULL);
+        //Refresh SDL keyboard state
+        SDL_PumpEvents();
         
         //Process input
-        if (state[SDL_SCANCODE_UP])
+        if (state[SDL_SCANCODE_W])
         { 
             lastPosition = cameraPosition; //Store last position
 
@@ -653,11 +700,11 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (state[SDL_SCANCODE_DOWN])
+        if (state[SDL_SCANCODE_S])
         { 
             lastPosition = cameraPosition;
 
-           cameraPosition.x -= movementSpeed * cameraFront.x;
+            cameraPosition.x -= movementSpeed * cameraFront.x;
 
             if (enableCollisions && checkCollision(cameraPosition.x, cameraPosition.z, mazeArray, mazeGenerator->getMazeSize()))
             {
@@ -674,15 +721,15 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (state[SDL_SCANCODE_LEFT])
+        if (!mouseEnabled && state[SDL_SCANCODE_A])
         {
-            yawAngle -= cameraSpeed;
+            cameraYaw -= cameraSpeed;
         }
         
 
-        if (state[SDL_SCANCODE_RIGHT])
+        if (!mouseEnabled && state[SDL_SCANCODE_D])
         {
-            yawAngle += cameraSpeed;
+            cameraYaw += cameraSpeed;
         }
 
         if (state[SDL_SCANCODE_ESCAPE])
@@ -696,10 +743,23 @@ int main(int argc, char* argv[])
             isRunning = false;
         }
 
-        //Setup camera
-        cameraFront.x = cos(glm::radians(yawAngle));
-        cameraFront.y = sin(glm::radians(0.0f)); 
-        cameraFront.z = sin(glm::radians(yawAngle));        
+        //Calculate camera direction
+        glm::vec3 cameraDirection;
+        cameraDirection.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+        cameraDirection.y = sin(glm::radians(cameraPitch));
+        cameraDirection.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
+
+        //Setup camera front
+        if (mouseEnabled)
+        {
+            cameraFront = glm::normalize(cameraDirection);  
+        }
+        else
+        {
+            cameraFront.x = cos(glm::radians(cameraYaw));
+            cameraFront.y = sin(glm::radians(0.0f)); 
+            cameraFront.z = sin(glm::radians(cameraYaw));   
+        }  
 
         //Begin drawing
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
