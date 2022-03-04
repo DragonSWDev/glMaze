@@ -9,7 +9,6 @@
 #include <filesystem>
 
 #include "MazeGenerator.hpp"
-#include "SDL_surface.h"
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
