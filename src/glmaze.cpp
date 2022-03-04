@@ -9,6 +9,7 @@
 #include <filesystem>
 
 #include "MazeGenerator.hpp"
+#include "SDL_surface.h"
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
@@ -315,6 +316,22 @@ void parseArguments(std::vector<std::string> arguments)
     windowHeight = height;
 }
 
+void setupGLTexture(GLuint textureID, SDL_Surface* texture)
+{
+    //Setup texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    //Set texture wrapping and filtering options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->w, texture->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->pixels); //Get texture data from SDL surface
+    
+    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
 int main(int argc, char* argv[])
 {
     windowWidth = 800;
@@ -384,7 +401,7 @@ int main(int argc, char* argv[])
     std::cout << (setFullscreen ? "fullscreen" : "windowed") << std::endl;
     std::cout << "Maze size: " << mazeSize << std::endl;
     std::cout << (enableCollisions ? "Collisions enabled" : "Collisions disabled") << std::endl;
-    std::cout << (mouseEnabled ? "Mouse control enabled" : "Mouse control disabled") << std::endl << std::endl;
+    std::cout << (mouseEnabled ? "Mouse control enabled" : "Mouse control disabled") << std::endl;
 
     if (!mazeSeed.empty())
     {
@@ -538,58 +555,10 @@ int main(int argc, char* argv[])
     GLuint mazeTextures[4];
     glGenTextures(4, mazeTextures);
 
-    //Setup wall texture
-    glBindTexture(GL_TEXTURE_2D, mazeTextures[0]);
-
-    //Set texture wrapping and filtering options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, wallImage->w, wallImage->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, wallImage->pixels); //Get texture data from SDL surface
-    
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    //Setup floor texture
-    glBindTexture(GL_TEXTURE_2D, mazeTextures[1]);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, floorImage->w, floorImage->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, floorImage->pixels); //Get texture data from SDL surface
-    
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    //Setup ceiling texture
-    glBindTexture(GL_TEXTURE_2D, mazeTextures[2]);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ceilingImage->w, ceilingImage->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, ceilingImage->pixels); //Get texture data from SDL surface
-    
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    //Setup exit texture
-    glBindTexture(GL_TEXTURE_2D, mazeTextures[3]);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, exitImage->w, exitImage->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, exitImage->pixels); //Get texture data from SDL surface
-    
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    setupGLTexture(mazeTextures[0], wallImage);
+    setupGLTexture(mazeTextures[1], floorImage);
+    setupGLTexture(mazeTextures[2], ceilingImage);
+    setupGLTexture(mazeTextures[3], exitImage);
 
     //Free image surfaces, their data was copied to GPU so they are not needed anymore
     SDL_FreeSurface(wallImage);
