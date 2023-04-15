@@ -1,5 +1,5 @@
 #include <SDL.h>
-#include <SDL_image.h>
+#include <cstdlib>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,11 +9,15 @@
 #include <filesystem>
 
 #include "MazeGenerator.hpp"
+#include "SDL_stdinc.h"
+#include "SDL_surface.h"
 #include "ShaderManager.hpp"
 #include "MazeGeneratorDFS.hpp"
 #include "MazeGeneratorRD.hpp"
 
 #include "mini/ini.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 
 #if defined(WIN32) || defined(_WIN32)
     #define PATH_SEPARATOR "\\"
@@ -29,6 +33,14 @@ bool enableCollisions, setFullscreen, setPortable, mouseEnabled;
 std::string mazeSeed;
 
 Generator selectedGenerator;
+
+struct StbImage
+{
+    unsigned char* pixels;
+    int width;
+    int height;
+    int channels;
+};
 
 //Check collision between point (camera/player) and rectangle (maze field)
 //For cube add some margin (0.2f) to avoid watching through walls
@@ -315,7 +327,7 @@ void parseArguments(std::vector<std::string> arguments)
     windowHeight = height;
 }
 
-void setupGLTexture(GLuint textureID, SDL_Surface* texture)
+void setupGLTexture(GLuint textureID, StbImage image)
 {
     //Setup texture
     glBindTexture(GL_TEXTURE_2D, textureID);
@@ -326,9 +338,33 @@ void setupGLTexture(GLuint textureID, SDL_Surface* texture)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->w, texture->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->pixels); //Get texture data from SDL surface
+    //Get pixels from loaded image
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.pixels);
     
     glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+//Create SDL_Surface from image loaded by stb_image
+SDL_Surface* surfaceFromStbImage(StbImage image)
+{
+    int pitch = image.width * image.channels;
+
+    Uint32 redMask, greenMask, blueMask, alphaMask;
+
+    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        int shift = (image.channels == 4) ? 0 : 8;
+        redMask = 0xff000000 >> shift;
+        greenMask = 0x00ff0000 >> shift;
+        blueMask = 0x0000ff00 >> shift;
+        alphaMask = 0x000000ff >> shift;
+    #else
+        redMask = 0x000000ff;
+        greenMask = 0x0000ff00;
+        blueMask = 0x00ff0000;
+        alphaMask = (image.channels == 4) ? 0xff000000 : 0;
+    #endif
+
+    return SDL_CreateRGBSurfaceFrom(image.pixels, image.width, image.height, image.channels*8, pitch, redMask, greenMask, blueMask, alphaMask);
 }
 
 int main(int argc, char* argv[])
@@ -432,8 +468,6 @@ int main(int argc, char* argv[])
     mazeGenerator->generateMaze();
     mazeArray = mazeGenerator->getMazeArray();
 
-    IMG_Init(IMG_INIT_PNG);
-
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE); //Set OpenGL context to OpenGL 3.3 Core Profile
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -483,7 +517,7 @@ int main(int argc, char* argv[])
 
     //Cube vertices
     float wallVertices[] = {
-        //Vertex positions      //Texture coordinates   //Normal vector
+        //Vertex positions      //Texture coordinates                       //Normal vector
          0.5f,  0.5f, 0.0f,     1.0f, 1.0f,             0.0f, 0.0f, 1.0f,
          0.5f, -0.5f, 0.0f,     1.0f, 0.0f,             0.0f, 0.0f, 1.0f,
         -0.5f, -0.5f, 0.0f,     0.0f, 0.0f,             0.0f, 0.0f, 1.0f,
@@ -498,7 +532,14 @@ int main(int argc, char* argv[])
 
     //Load icon
     //Lack of icon file is not fatal error so it can continue when icon can't be loaded
-    SDL_Surface* windowIcon = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "icon.png").c_str());
+    StbImage windowIconImage;
+    windowIconImage.pixels = stbi_load((installDir + "assets" + PATH_SEPARATOR + "icon.png").c_str(), &windowIconImage.width, &windowIconImage.height, &windowIconImage.channels, 0);
+    SDL_Surface* windowIcon = nullptr;
+
+    if (windowIconImage.pixels != nullptr)
+    {
+        windowIcon = surfaceFromStbImage(windowIconImage);
+    }
 
     if (windowIcon != nullptr)
     {
@@ -516,14 +557,15 @@ int main(int argc, char* argv[])
     }
 
     //Loading textures
-    SDL_Surface* wallImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "wall.png").c_str());
-    SDL_Surface* floorImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "floor.png").c_str());
-    SDL_Surface* ceilingImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "ceiling.png").c_str());
-    SDL_Surface* exitImage = IMG_Load((installDir + "assets" + PATH_SEPARATOR + "exit.png").c_str());
+    StbImage wallImage, floorImage, ceilingImage, exitImage;
+    wallImage.pixels = stbi_load((installDir + "assets" + PATH_SEPARATOR + "wall.png").c_str(), &wallImage.width, &wallImage.height, &wallImage.channels, 0);
+    floorImage.pixels = stbi_load((installDir + "assets" + PATH_SEPARATOR + "floor.png").c_str(), &floorImage.width, &floorImage.height, &floorImage.channels, 0);
+    ceilingImage.pixels = stbi_load((installDir + "assets" + PATH_SEPARATOR + "ceiling.png").c_str(), &ceilingImage.width, &ceilingImage.height, &ceilingImage.channels, 0);
+    exitImage.pixels = stbi_load((installDir + "assets" + PATH_SEPARATOR + "exit.png").c_str(), &exitImage.width, &exitImage.height, &exitImage.channels, 0);
 
-    if (wallImage == nullptr || floorImage == nullptr || ceilingImage == nullptr || exitImage == nullptr)
+    if (wallImage.pixels == nullptr || floorImage.pixels == nullptr || ceilingImage.pixels == nullptr || exitImage.pixels == nullptr)
     {
-        std::cerr << "Assets couldn't be loaded!" << std::endl;
+        std::cerr << "Failed loading assets!" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -559,11 +601,11 @@ int main(int argc, char* argv[])
     setupGLTexture(mazeTextures[2], ceilingImage);
     setupGLTexture(mazeTextures[3], exitImage);
 
-    //Free image surfaces, their data was copied to GPU so they are not needed anymore
-    SDL_FreeSurface(wallImage);
-    SDL_FreeSurface(floorImage);
-    SDL_FreeSurface(ceilingImage);
-    SDL_FreeSurface(exitImage);
+    //Free image data, their data was copied to GPU so they are not needed anymore
+    stbi_image_free(wallImage.pixels);
+    stbi_image_free(floorImage.pixels);
+    stbi_image_free(ceilingImage.pixels);
+    stbi_image_free(exitImage.pixels);
 
     //Set model, view and projection matrices
     glm::mat4 model = glm::mat4(1.0f);
@@ -881,12 +923,12 @@ int main(int argc, char* argv[])
 
     if (windowIcon != nullptr)
     {
+        stbi_image_free(windowIconImage.pixels);
         SDL_FreeSurface(windowIcon);
     }
 
     SDL_GL_DeleteContext(glContext);
     SDL_DestroyWindow(mainWindow);
-    IMG_Quit();
     SDL_Quit();
 
     return 0;

@@ -10,13 +10,13 @@ This is a simple modern OpenGL game that I wrote after completing first step of 
 ### 2. Install SDL2, SDL2_image, GLM and OpenGL development libraries
 
 #### Linux
-Install SDL2, SDL2_image, GLM, OpenGL development libraries and cmake. For information about installing packages check manual of distribution you are using.
+Install SDL2, GLM, OpenGL development libraries and cmake. For information about installing packages check manual of distribution you are using.
 
 #### Windows
-Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/) and [GLM](https://github.com/g-truc/glm). Make sure to download development libraries for Visual C++. SDL2, SDL2_image and GLM are expected to be present in ext directory in source root. Create ext directory in source root and extract downloaded archives there. Change extracted directories names to SDL2, SDL2_image and glm respectively. If you wish to use different directories for dependencies modify CMakeLists.txt file to point SDL2_PATH, SDL2_IMAGE_PATH and GLM_ROOT_DIR variables to selected directories. OpenGL should come with graphics drivers. Build was tested with Visual Studio 2022 Community Edition but probably older versions should be able to build it as well (not tested).
+Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org) and [GLM](https://github.com/g-truc/glm). Make sure to download development libraries for Visual C++. SDL2 and GLM are expected to be present in ext directory in source root. Create ext directory in source root and extract downloaded archives there. Change extracted directories names to SDL2 and glm respectively. If you wish to use different directories for dependencies modify CMakeLists.txt file to point SDL2_PATH and GLM_ROOT_DIR variables to selected directories. OpenGL should come with graphics drivers. Build was tested with Visual Studio 2022 Community Edition but probably older versions should be able to build it as well (not tested).
 
 #### macOS
-Build was tested with framework installation. Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/) and [GLM](https://github.com/g-truc/glm). Install SDL2 and SDL2_image frameworks in /Library/Frameworks directory. Create ext directory, extract GLM and put glm directory there. OpenGL framework is part of operating system. Command line developers tools are also needed.
+Build was tested with framework installation. Download and install [CMake](https://cmake.org). Also download [SDL2](https://www.libsdl.org) and [GLM](https://github.com/g-truc/glm). Install SDL2 framework into /Library/Frameworks directory. Create ext directory, extract GLM and put glm directory there. OpenGL framework is part of operating system. Command line developers tools are also needed.
 
 ### 3. Build
 
@@ -65,4 +65,4 @@ Configuration file is located in following directories:
 By default camera is controlled by mouse and W/S keys are used for moving forward/backward. When mouse control is disabled then camera is rotated left and right by A and D keys.
 
 ## License
-glMaze is distributed under the terms of MIT License. Project depends on [OpenGL](https://www.opengl.org/), [SDL2](https://www.libsdl.org), [SDL2_image](https://www.libsdl.org/projects/SDL_image/), [GLM](https://github.com/g-truc/glm), [GLAD](https://glad.dav1d.de/) and [mINI](https://github.com/pulzed/mINI). For information about these libraries licensing check their respective websites. Assets were created by me and are distributed under the terms of [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
+glMaze is distributed under the terms of MIT License. Project depends on [OpenGL](https://www.opengl.org/), [SDL2](https://www.libsdl.org), [stb_image](https://github.com/nothings/stb/), [GLM](https://github.com/g-truc/glm), [GLAD](https://glad.dav1d.de/) and [mINI](https://github.com/pulzed/mINI). For information about these libraries licensing check their respective websites. Assets were created by me and are distributed under the terms of [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
