@@ -101,7 +101,7 @@ void MazeGeneratorDFS::addPath(unsigned int x, unsigned int y)
     directions.push_back(3);
     directions.push_back(4);
 
-    std::random_shuffle(directions.begin(), directions.end());
+    std::shuffle(directions.begin(), directions.end(), randomEngine);
 
     for (unsigned int i = 0; i < directions.size(); i++)
     {
