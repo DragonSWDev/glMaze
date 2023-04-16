@@ -7,7 +7,7 @@ This is a simple modern OpenGL game that I wrote after completing first step of 
 
 ### 1. Clone repository
 
-### 2. Install SDL2, SDL2_image, GLM and OpenGL development libraries
+### 2. Install SDL2, GLM and OpenGL development libraries
 
 #### Linux
 Install SDL2, GLM, OpenGL development libraries and cmake. For information about installing packages check manual of distribution you are using.
