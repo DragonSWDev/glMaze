@@ -1,6 +1,8 @@
 # glMaze
 This is a simple modern OpenGL game that I wrote after completing first step of the learnopengl.com online book. It's a very simple 3D game where player starts in random position and needs to find exit in randomly generated (Depth-first search and recursive division algorithms) perfect maze. It's implemented using OpenGL, SDL2, mINI, GLM and GLAD libraries.
 
+Note: It was also implemented in Rust 🦀, check [glmaze-rs](https://github.com/DragonSWDev/glmaze-rs)
+
 <span style="display:block;text-align:center">![Screenshot](./doc/screenshot.png)
 
 ## Build guide
